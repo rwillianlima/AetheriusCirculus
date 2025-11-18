@@ -1,5 +1,3 @@
-  // Corrigir busca, não está funcionando com os operadores lógicos nas páginas de súmulas. =====================================
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -261,38 +259,33 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .block:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        .block.sumula-tjgo {
+            border-left: 4px solid var(--sumula-tjgo-color);
+            background: linear-gradient(90deg, #f0fff4 0%, var(--white) 50px);
+            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2);
         }
 
-     .block.sumula-tjgo {
-    border-left: 4px solid var(--sumula-tjgo-color);
-    background: linear-gradient(90deg, #f0fff4 0%, var(--white) 50px);
-    box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2); /* Sombra suave verde */
-}
+        .block.sumula-stj {
+            border-left: 4px solid var(--sumula-stj-color);
+            background: linear-gradient(90deg, #e0f7fa 0%, var(--white) 50px);
+            box-shadow: 0 4px 10px rgba(23, 162, 184, 0.2);
+        }
 
-.block.sumula-stj {
-    border-left: 4px solid var(--sumula-stj-color);
-    background: linear-gradient(90deg, #e0f7fa 0%, var(--white) 50px);
-    box-shadow: 0 4px 10px rgba(23, 162, 184, 0.2); /* Sombra suave ciano */
-}
+        .block.sumula-stf {
+            border-left: 4px solid var(--sumula-stf-color);
+            background: linear-gradient(90deg, #f4f0ff 0%, var(--white) 50px);
+            box-shadow: 0 4px 10px rgba(111, 66, 193, 0.2);
+        }
 
-.block.sumula-stf {
-    border-left: 4px solid var(--sumula-stf-color);
-    background: linear-gradient(90deg, #f4f0ff 0%, var(--white) 50px);
-    box-shadow: 0 4px 10px rgba(111, 66, 193, 0.2); /* Sombra suave roxa */
-}
+        .block.jurisprudencia {
+            border-left: 4px solid var(--primary-color);
+            background: var(--white);
+        }
 
-.block.jurisprudencia {
-    border-left: 4px solid var(--primary-color);
-    background: var(--white);
-}
-
-.block:hover {
-    transform: translateY(-3px); /* Aumenta um pouco o movimento para o destaque */
-    box-shadow: 0 8px 16px rgba(0,0,0,0.15); /* Sombra mais visível ao passar o mouse */
-}
+        .block:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
 
         .copy-btn {
             position: absolute;
@@ -642,7 +635,7 @@
         <div id="pagination" class="pagination"></div>
     </div>
     
-    <div id="version-tag">v.3.3</div>
+    <div id="version-tag">v.3.4 (Fix Logic)</div>
 
     <script>
         // Variáveis globais
@@ -804,6 +797,25 @@
             return 2; // Jurisprudência (gid '0')
         }
 
+        // AUXILIAR: Extrair texto de busca de qualquer item de forma robusta
+        function getItemSearchText(item) {
+            // Junta todos os campos possíveis para garantir que Súmulas (que têm colunas diferentes) sejam indexadas corretamente
+            const fields = [
+                item.Ementa, 
+                item.Enunciado, 
+                item.Conteúdo, 
+                item.Processo, 
+                item.Numero, 
+                item['Número'], 
+                item['Número da Súmula'], 
+                item['Numero_da_Sumula'],
+                item.Relator,
+                item.InteiroTeor
+            ];
+            // Filtra valores vazios/nulos e junta tudo em minúsculas
+            return fields.filter(val => val && typeof val === 'string').join(' ').toLowerCase();
+        }
+
         // ============== FUNÇÕES DE DADOS E BUSCA ==============
 
         function loadDataset() {
@@ -928,7 +940,8 @@
                 }
                 
                 if (searchTerms) {
-                    const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''}`.toLowerCase();
+                    // CORREÇÃO: Usa a função auxiliar que pega todos os campos, inclusive números de súmula
+                    const searchText = getItemSearchText(item);
                     return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
                 }
                 
@@ -944,70 +957,46 @@
             });
         }
 
-       async function searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy) {
-    const allGids = ['2110972132', '1277187400', '503544784', '0']; 
-    let allResults = [];
-    let loadedCount = 0;
-    
-    setSearchButtonState(true, `Carregando bases...`);
-    
-    for (const gid of allGids) {
-        try {
-            const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${gid}&single=true&output=csv`;
-            const data = await loadSingleDataset(csvUrl); // Esta linha carrega os dados
-            loadedCount++;
+        async function searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy) {
+            const allGids = ['2110972132', '1277187400', '503544784', '0']; 
+            let allResults = [];
             
-            console.log(`--- INSPEÇÃO DE DADOS: GID ${gid} (${DATA_SOURCES[gid].name}) ---`);
-            console.log(`URL do CSV: ${csvUrl}`);
-            console.log(`Número de registros carregados: ${data.length}`);
-
-            if (data.length > 0) {
-                console.log('PRIMEIRO ITEM CARREGADO:');
-                console.log(data[0]); // Mostra todo o primeiro item
-                console.log('CONTEÚDO DA COLUNA "EMENTA" (se existir):', data[0].Ementa);
-                console.log('CONTEÚDO DA COLUNA "ENUNCIADO" (se existir):', data[0].Enunciado);
-                console.log('TODAS AS COLUNAS (cabeçalhos) detectadas:', Object.keys(data[0]));
-            } else {
-                console.log('AVISO: NENHUM REGISTRO ENCONTRADO PARA ESTA BASE!');
-            }
-            console.log('--- FIM DA INSPEÇÃO DE DADOS ---');
+            setSearchButtonState(true, `Carregando bases...`);
             
-            // ... (o restante do seu código dentro do loop continua aqui)
-
-            const isJurisprudencia = gid === '0';
-
-            const filtered = data.filter(item => {
-                // ... (seu código de filtro continua aqui) ...
-
-                if (searchTerms) {
-                    const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''} ${item.Relator || ''}`.toLowerCase();
+            for (const gid of allGids) {
+                try {
+                    const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${gid}&single=true&output=csv`;
+                    const data = await loadSingleDataset(csvUrl);
                     
-                    // AQUI É MUITO IMPORTANTE! VEJA SE SEU searchText NÃO ESTÁ VAZIO PARA SÚMULAS
-                    if (!isJurisprudencia) { // Para as Súmulas (GID diferente de '0')
-                        console.log(`  --- FILTRO SÚMULA: GID ${gid} ---`);
-                        console.log(`  Item sendo filtrado (Processo/Numero): ${item.Processo || item.Numero || item['Número da Súmula']}`);
-                        console.log(`  searchText Gerado para este item: "${searchText}"`);
-                        console.log(`  Query de busca: "${searchTerms}"`);
-                        console.log(`  Resultado da busca: ${portugueseAdvancedSearch(searchText, searchTerms, useFuzzy)}`);
-                    }
+                    const filtered = data.filter(item => {
+                        // Filtros de Data (se existirem colunas de data)
+                        if (startDate || endDate) {
+                            const itemDate = parseDate(item.Publicação);
+                            if (itemDate) {
+                                if (startDate && itemDate < new Date(startDate)) return false;
+                                if (endDate && itemDate > new Date(endDate)) return false;
+                            }
+                        }
 
-                    return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
+                        if (searchTerms) {
+                             // CORREÇÃO: Usa a função auxiliar que pega todos os campos
+                            const searchText = getItemSearchText(item);
+                            return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
+                        }
+                        return true;
+                    }).map(item => ({
+                        ...item,
+                        dataSource: gid,
+                        baseName: DATA_SOURCES[gid].name
+                    }));
+                    
+                    allResults = allResults.concat(filtered);
+
+                } catch (error) {
+                    console.error(`Erro ao carregar base ${gid}:`, error);
+                    showAlert(`Aviso: Falha ao carregar a base ${DATA_SOURCES[gid].name}.`, 'warning');
                 }
-                
-                return true;
-            }).map(item => ({
-                ...item,
-                dataSource: gid,
-                baseName: DATA_SOURCES[gid].name
-            }));
-            
-            allResults = allResults.concat(filtered);
-
-        } catch (error) {
-            console.error(`Erro ao carregar base ${gid}:`, error);
-            showAlert(`Aviso: Falha ao carregar a base ${DATA_SOURCES[gid].name}. Resultados podem estar incompletos.`, 'warning');
-        }
-    }
+            }
             
             // LÓGICA DE ORDENAÇÃO MULTINÍVEL (Prioriza Súmulas, depois a data)
             return allResults.sort((a, b) => {
@@ -1035,7 +1024,7 @@
                         if (results.errors?.length > 0) {
                             reject(new Error(results.errors.map(e => e.message).join(', ')));
                         } else {
-                            // Filtra linhas vazias. Verifica se pelo menos uma chave de item não está vazia.
+                            // Filtra linhas vazias
                             resolve(results.data.filter(item => item && Object.values(item).some(v => v)));
                         }
                     },
@@ -1044,128 +1033,96 @@
             });
         }
 
-        // Busca avançada em português (Mantida inalterada)
-        // A função de busca avançada em português
-function portugueseAdvancedSearch(text, query, useFuzzy = false) {
-    if (!query?.trim()) return true;
+        // =================================================================================
+        // FUNÇÃO DE BUSCA AVANÇADA CORRIGIDA
+        // =================================================================================
+        function portugueseAdvancedSearch(text, query, useFuzzy = false) {
+            if (!query?.trim()) return true;
 
-    let normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            // 1. Normalização inicial
+            const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            let normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-    // --- INÍCIO DA CORREÇÃO ---
-    // Remove parênteses externos se eles englobam toda a query,
-    // pois sua lógica interna de parsing já lida com operadores "OU", "E", etc.
-    // e os parênteses externos podem estar sendo tratados como "termos" literais.
-    let tempQuery = normalizedQuery.trim();
-    if (tempQuery.length > 2 && tempQuery.startsWith('(') && tempQuery.endsWith(')')) {
-        // Verifica se a string entre os parênteses contém operadores OU/E/NÃO
-        // para garantir que não estamos removendo parênteses de um termo literal tipo "(teste)"
-        // ou de uma expressão complexa que use parênteses internos.
-        // Se a string interna não contiver operadores e não for uma frase entre aspas,
-        // é mais seguro remover os parênteses externos.
-        // Simplificado para este caso: assumimos que (A OU B) é o caso mais comum.
-        const innerContent = tempQuery.substring(1, tempQuery.length - 1).trim();
-        if (innerContent.includes('ou') || innerContent.includes('e') || innerContent.includes('não') || innerContent.includes(';')) {
-             normalizedQuery = innerContent; // Remove os parênteses externos
+            // 2. Proteção de Frases entre Aspas
+            // Substitui frases exatas por tokens temporários para não serem quebradas pelos operadores
+            const quotedTerms = [];
+            normalizedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
+                quotedTerms.push(p1.trim());
+                return `__QUOTED_${quotedTerms.length - 1}__`;
+            });
+
+            // 3. Tratamento de Parênteses Externos desnecessários
+            normalizedQuery = normalizedQuery.trim();
+            if (normalizedQuery.startsWith('(') && normalizedQuery.endsWith(')')) {
+                // Verifica se os parênteses cobrem toda a expressão
+                // (Lógica simplificada: remove apenas se for o nível mais externo)
+                normalizedQuery = normalizedQuery.substring(1, normalizedQuery.length - 1).trim();
+            }
+
+            // 4. Divisão Lógica Principal por "OU"
+            // A lógica é: (Grupo A) OU (Grupo B) OU (Grupo C). Se UM deles for verdadeiro, retorna TRUE.
+            // Isso corrige o problema de precedência onde 'A OU B' exigia 'A E B' na versão antiga.
+            const orGroups = normalizedQuery.split(/\s+ou\s+/);
+
+            // Verifica se ALGUM grupo "OU" é satisfeito
+            const matchesAnyGroup = orGroups.some(groupString => {
+                
+                // Dentro de um grupo, a lógica padrão é "E" (AND).
+                // Tokens separados por espaço, 'e' ou ';' devem todos estar presentes (ou ausentes se NEGADOS).
+                
+                // Divide o grupo em tokens, respeitando espaços e ponto-e-vírgula
+                // Removemos ' e ' explicitamente se estiver isolado no split abaixo
+                let tokens = groupString.split(/\s+|;/).filter(t => t && t !== 'e');
+                
+                // Validação de TODOS os termos do grupo (AND Logic)
+                return tokens.every((token, index) => {
+                    let isNegation = false;
+                    let cleanToken = token;
+
+                    // Verifica negação (ex: "-termo" ou "não termo")
+                    // Nota: "não termo" pode ter sido quebrado em ["não", "termo"] pelo split acima.
+                    // Vamos tratar tokens isolados "não" ignorando-os e assumindo que o usuário escreveu "não termo".
+                    // Mas para robustez, verificamos se o token atual começa com '-' ou se o ANTERIOR era 'não'.
+                    
+                    if (cleanToken === 'nao' || cleanToken === 'não') {
+                        return true; // Pula a palavra 'não' isolada, a lógica será aplicada no próximo token
+                    }
+                    
+                    if (cleanToken.startsWith('-')) {
+                        isNegation = true;
+                        cleanToken = cleanToken.substring(1);
+                    } else if (index > 0 && (tokens[index-1] === 'nao' || tokens[index-1] === 'não')) {
+                        isNegation = true;
+                    }
+
+                    // Recupera o texto original se for uma frase entre aspas
+                    if (cleanToken.startsWith('__QUOTED_')) {
+                        const match = cleanToken.match(/__QUOTED_(\d+)__/);
+                        if (match) {
+                            const qIndex = parseInt(match[1]);
+                            cleanToken = quotedTerms[qIndex];
+                        }
+                    }
+
+                    if (!cleanToken) return true;
+
+                    // Executa a verificação (Fuzzy ou Regex padrão)
+                    let matched = false;
+                    if (useFuzzy) {
+                        // Remove curinga (*) para fuzzy, pois fuzzy já é aproximado
+                        matched = fuzzyMatch(normalizedText, cleanToken.replace(/\*/g, ''));
+                    } else {
+                        const regex = createSearchRegex(cleanToken);
+                        matched = regex.test(normalizedText);
+                    }
+
+                    // Se é negação, queremos que matched seja FALSE. Se não é, queremos TRUE.
+                    return isNegation ? !matched : matched;
+                });
+            });
+
+            return matchesAnyGroup;
         }
-        // Se for algo como ("termo exato"), o innerContent não terá operadores,
-        // mas a lógica de aspas abaixo já o transforma em QUOTED_X_TERM,
-        // então a remoção dos parênteses externos para QUOTED_X_TERM pode ser feita.
-        // Para simplificar, vamos arriscar remover se toda a query for "(...)"
-        // e confiar que a lógica de aspas e operadores internos funcionará.
-        // Uma verificação mais robusta seria ver se os parênteses não estão dentro de aspas.
-
-        // CORREÇÃO MAIS SEGURA para seu cenário:
-        // Primeiro processamos as aspas, depois vemos se o que sobrou está entre parênteses
-    }
-    // --- FIM DA CORREÇÃO ---
-
-    const quotedTerms = [];
-    let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
-        quotedTerms.push(p1.trim());
-        return ` QUOTED_${quotedTerms.length - 1}_TERM `;
-    });
-
-    // --- REPOSICIONANDO A CORREÇÃO DE PARÊNTESES EXTERNOS APÓS O PROCESSAMENTO DE ASPAS ---
-    // Agora que as frases entre aspas foram convertidas para QUOTED_X_TERM,
-    // podemos verificar se a string resultante está *inteiramente* entre parênteses.
-    processedQuery = processedQuery.trim();
-    if (processedQuery.length > 2 && processedQuery.startsWith('(') && processedQuery.endsWith(')')) {
-        processedQuery = processedQuery.substring(1, processedQuery.length - 1).trim();
-    }
-    // --- FIM DO REPOSICIONAMENTO ---
-
-    const tokens = processedQuery.split(/\s+/).filter(Boolean);
-    let logicalStructure = [];
-    let currentGroup = { type: 'AND', terms: [] };
-
-    tokens.forEach((token, index) => {
-        const lowerToken = token.toLowerCase();
-        let isOperator = false;
-        
-        if (lowerToken === 'e' || lowerToken === ';') {
-            if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
-            currentGroup = { type: 'AND', terms: [] };
-            isOperator = true;
-        } else if (lowerToken === 'ou') {
-            if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
-            currentGroup = { type: 'OR', terms: [] };
-            isOperator = true;
-        } else if (lowerToken === 'não' || token.startsWith('-')) {
-            // Garante que o operador NOT aplica-se ao próximo token.
-            // Se o token for '-' e o próximo existir, use o próximo.
-            // Se o token for 'não', o próximo é o termo a ser negado.
-            let termToNegate = null;
-            if (token.startsWith('-')) {
-                termToNegate = token.substring(1);
-            } else if (lowerToken === 'não' && tokens[index + 1]) {
-                termToNegate = tokens[index + 1];
-                tokens[index + 1] = null; // Consume o próximo token
-            }
-
-            if (termToNegate) {
-                if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup); // Empurra grupo anterior
-                logicalStructure.push({ type: 'NOT', terms: [createSearchRegex(termToNegate)] });
-                currentGroup = { type: 'AND', terms: [] }; // Reinicia o grupo atual como AND
-            }
-            isOperator = true;
-        }
-        
-        if (!isOperator && token) { // Garante que não é um token nulo consumido por 'NÃO'
-            let finalTerm = token;
-            if (token.startsWith('QUOTED_')) {
-                const qIndex = parseInt(token.replace('QUOTED_', '').replace('_TERM', ''));
-                finalTerm = quotedTerms[qIndex];
-            }
-            if (finalTerm) currentGroup.terms.push(createSearchRegex(finalTerm));
-        }
-    });
-
-    if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
-    
-    // Agora avalia a logicalStructure
-    for (const group of logicalStructure) {
-        if (useFuzzy) {
-            if (group.type === 'NOT') {
-                if (group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
-            } else if (group.type === 'AND') {
-                if (!group.terms.every(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
-            } else if (group.type === 'OR') {
-                if (!group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
-            }
-        } else {
-            if (group.type === 'NOT') {
-                if (group.terms.some(regex => regex.test(normalizedText))) return false;
-            } else if (group.type === 'AND') {
-                if (!group.terms.every(regex => regex.test(normalizedText))) return false;
-            } else if (group.type === 'OR') {
-                if (!group.terms.some(regex => regex.test(normalizedText))) return false;
-            }
-        }
-    }
-
-    return true;
-}
 
         function createSearchRegex(term) {
             const escapedTerm = term.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
@@ -1218,7 +1175,7 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
             return costs[str2.length];
         }
 
-        // Funções de exibição (Mantidas inalteradas)
+        // Funções de exibição
         function displayResults(results) {
             const allBlocks = document.getElementById('allBlocks');
             const resultCount = document.getElementById('resultCount');
@@ -1402,9 +1359,7 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
         performFallbackCopy(event, textToCopy);
     }
 }
-// Lembre-se de ter a função performFallbackCopy no seu script, conforme a correção anterior.
 
-    // ADICIONE ESTA NOVA FUNÇÃO DE FALLBACK
     function performFallbackCopy(event, textToCopy) {
         const btn = event.currentTarget;
         const originalHTML = btn.innerHTML;
@@ -1444,8 +1399,7 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
             document.body.removeChild(textArea);
         }
     }
-        // ... funções getTribunalName, extractSearchTerms, etc.
-
+        
         function getTribunalName(dataSource) {
             const tribunais = {
                 '2110972132': 'TJGO',
@@ -1481,7 +1435,7 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
                         .replace(/o/g, '[oóòôõö]')
                         .replace(/u/g, '[uúùûü]')
                         .replace(/c/g, '[cç]')
-                        .replace(/\*/g, '.*'); // Adicionado suporte a curinga no destaque
+                        .replace(/\*/g, '.*'); 
         }
 
         function highlightText(text, searchTerms) {
@@ -1497,13 +1451,11 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
                 return createAccentInsensitiveRegexString(escapedTerm);
             });
 
-            // Cria uma expressão regular que busca qualquer um dos termos, de forma insensível a acentos
             const regex = new RegExp(`(${accentInsensitiveTerms.join('|')})`, 'gi');
             return text.replace(regex, '<span class="highlight">$&</span>');
         }
 
         function escapeRegex(string) {
-            // Escapa caracteres especiais do regex, exceto o '*' para o curinga.
             return string.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '*');
         }
 
@@ -1511,14 +1463,12 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
             const pagination = document.getElementById('pagination');
             pagination.innerHTML = '';
             
-            // Botão Anterior
             const prevButton = document.createElement('button');
             prevButton.innerHTML = '‹';
             prevButton.disabled = currentPage === 1;
             prevButton.onclick = () => changePage(currentPage - 1);
             pagination.appendChild(prevButton);
             
-            // Páginas
             const startPage = Math.max(1, currentPage - 2);
             const endPage = Math.min(totalPages, startPage + 4);
             
@@ -1530,7 +1480,6 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
                 pagination.appendChild(pageButton);
             }
             
-            // Botão Próximo
             const nextButton = document.createElement('button');
             nextButton.innerHTML = '›';
             nextButton.disabled = currentPage === totalPages;
@@ -1542,14 +1491,6 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
             currentPage = newPage;
             displayResults(filteredData);
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function resetSearch() {
-            document.getElementById('allBlocks').innerHTML = '';
-            document.getElementById('resultCount').textContent = '';
-            document.getElementById('pagination').innerHTML = '';
-            const relatorSelect = document.getElementById('relator');
-            relatorSelect.innerHTML = '<option value="">Relator (todos)</option>';
         }
     </script>
 </body>
