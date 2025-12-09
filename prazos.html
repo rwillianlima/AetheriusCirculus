@@ -1,1497 +1,1030 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pesquisa de Jurisprudência – 6ª Câmara Cível</title>
-    <style>
-:root {
-    --primary-color: #2f4050;
-    --secondary-color: #3b5165;
-    --background-color: #f4f4f4;
-    --text-color: #222;
-    --white: #fff;
-    --success-color: #28a745;
-    --error-color: #dc3545;
-    --warning-color: #ffc107;
-    --sumula-stf-color: #6f42c1; /* Roxo */
-    --sumula-stj-color: #17a2b8; /* Ciano */
-    --sumula-tjgo-color: #28a745; /* Verde */
-    --highlight-bg-strong: #fff3cd; /* Amarelo-claro para fundo de destaque */
-}
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
-            background: var(--background-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-        }
-
-        /* Mobile Menu */
-        #mobile-menu {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background: var(--primary-color);
-            padding: 15px;
-            z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .menu-toggle {
-            background: none;
-            border: none;
-            color: var(--white);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        /* Sidebar */
-        #sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 240px;
-            height: 100%;
-            background: var(--primary-color);
-            box-shadow: 2px 0 6px rgba(0,0,0,.2);
-            display: flex;
-            flex-direction: column;
-            z-index: 999;
-            overflow-y: auto;
-        }
-
-        #sidebar a {
-            display: block;
-            padding: 12px 20px;
-            color: var(--white);
-            text-decoration: none;
-            font-size: 1rem;
-            transition: background 0.3s;
-        }
-
-        #sidebar a:hover {
-            background: var(--secondary-color);
-        }
-        
-        /* Relógio */
-        #clock {
-            margin-top: auto;
-            padding: 15px 20px;
-            color: var(--white);
-            font-size: 0.9rem;
-            border-top: 1px solid var(--secondary-color);
-            background: #263340;
-        }
-
-        #clock-time {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        #clock-date {
-            font-size: 0.85rem;
-            opacity: 0.8;
-        }
-
-        /* Content */
-        #content {
-            margin-left: 260px;
-            padding: 40px 25px;
-            min-height: 100vh;
-            text-align: center;
-            color: var(--text-color);
-        }
-
-        #content h1 {
-            font-size: 3.5rem;
-            margin-bottom: 8px;
-            color: var(--primary-color);
-            font-weight: bold;
-        }
-
-        .subtitle {
-            font-size: 1.1rem;
-            color: #444;
-            margin-bottom: 5px;
-        }
-
-        .dataset-info {
-            font-size: .92rem;
-            color: #666;
-            margin: 2px auto 18px auto;
-            max-width: 920px;
-        }
-
-        .notice {
-            font-size: .85rem;
-            margin-bottom: 6px;
-            color: #333;
-            padding: 0 10px;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* Search */
-        .search-bar {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin: 10px auto;
-            padding: 0 10px;
-        }
-
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 0;
-        }
-
-        .search-bar input,
-        .search-bar select {
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 200px;
-            max-width: 100%;
-            background: var(--white);
-            color: var(--text-color);
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .search-bar input:focus,
-        .search-bar select:focus {
-            border-color: var(--primary-color);
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(47, 64, 80, 0.2);
-        }
-
-        .search-bar select:disabled {
-            background-color: #f0f0f0;
-            cursor: not-allowed;
-            color: #888;
-        }
-
-        .button-container {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-        }
-
-        .search-bar button {
-            padding: 14px 30px;
-            border: none;
-            border-radius: 6px;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: var(--white);
-            font-weight: bold;
-            cursor: pointer;
-            min-width: 120px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .search-bar button:hover {
-            background: linear-gradient(135deg, var(--secondary-color), #4a6572);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        }
-
-        .search-bar button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .search-bar button:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .opts {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #444;
-            font-size: .9rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        /* Resultados */
-        #resultCount {
-            margin: 20px auto;
-            font-weight: bold;
-            color: var(--primary-color);
-            max-width: 900px;
-            padding: 0 15px;
-        }
-
-        /* Blocos de resultados */
-        .block {
-            position: relative;
-            background: var(--white);
-            margin: 15px auto;
-            padding: 60px 20px 15px 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: left;
-            max-width: 900px;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .block.sumula-tjgo {
-            border-left: 4px solid var(--sumula-tjgo-color);
-            background: linear-gradient(90deg, #f0fff4 0%, var(--white) 50px);
-            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2);
-        }
-
-        .block.sumula-stj {
-            border-left: 4px solid var(--sumula-stj-color);
-            background: linear-gradient(90deg, #e0f7fa 0%, var(--white) 50px);
-            box-shadow: 0 4px 10px rgba(23, 162, 184, 0.2);
-        }
-
-        .block.sumula-stf {
-            border-left: 4px solid var(--sumula-stf-color);
-            background: linear-gradient(90deg, #f4f0ff 0%, var(--white) 50px);
-            box-shadow: 0 4px 10px rgba(111, 66, 193, 0.2);
-        }
-
-        .block.jurisprudencia {
-            border-left: 4px solid var(--primary-color);
-            background: var(--white);
-        }
-
-        .block:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-        }
-
-        .copy-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: transparent;
-            color: #222;
-            border: none;
-            border-radius: 4px;
-            padding: 6px 8px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-            opacity: 0.7;
-        }
-
-        .copy-btn:hover {
-            background: rgba(0, 0, 0, 0.05);
-            opacity: 1;
-            transform: scale(1.05);
-        }
-
-        .copy-btn.copied {
-            color: var(--success-color);
-        }
-
-        .ementa-content {
-            line-height: 1.2;
-            text-align: justify;
-            font-size: 0.95rem;
-            white-space: normal;
-            margin: 0;
-            padding: 0;
-        }
-
-        .referencia {
-            display: inline !important;
-            color: #666;
-            font-size: 0.95rem; 
-            margin-left: 8px;
-            line-height: 1.2;
-            white-space: normal;
-        }
-
-        /* Destaque */
-        .highlight {
-            background: #ffeb3b;
-            color: #000;
-            font-weight: bold;
-            padding: 0 2px;
-            border-radius: 2px;
-        }
-
-        /* Pagination */
-        .pagination {
-            display: none;
-            justify-content: center;
-            gap: 6px;
-            margin: 20px auto;
-            max-width: 900px;
-            flex-wrap: wrap;
-            padding: 0 15px;
-        }
-
-        .pagination button {
-            background: var(--primary-color);
-            border: none;
-            border-radius: 4px;
-            color: var(--white);
-            padding: 8px 12px;
-            cursor: pointer;
-            min-width: 44px;
-            transition: background 0.3s;
-        }
-
-        .pagination button:hover:not([disabled]):not(.active) {
-            background: var(--secondary-color);
-        }
-
-        .pagination button.active {
-            background: #1c87c9;
-            font-weight: bold;
-        }
-
-        .pagination button[disabled] {
-            opacity: .5;
-            cursor: not-allowed;
-        }
-
-        /* Contêiner de resultados */
-        #allBlocks {
-            display: none;
-            padding: 0 15px;
-        }
-
-        /* Ajuda */
-        .help {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 0 15px;
-        }
-
-        .help details {
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid #dee2e6;
-        }
-
-        .help summary {
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .help code {
-            background: #e9ecef;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: monospace;
-        }
-
-        /* Loading spinner */
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: var(--white);
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Alertas */
-        .alert {
-            padding: 12px 15px;
-            border-radius: 4px;
-            margin: 15px auto;
-            max-width: 800px;
-        }
-
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        /* NOVO ESTILO: MARCA DE VERSÃO */
-        #version-tag {
-            position: fixed;
-            bottom: 5px;
-            right: 5px;
-            font-size: 0.75rem;
-            color: #777;
-            background: #fff;
-            padding: 2px 6px;
-            border-radius: 3px;
-            opacity: 0.8;
-            z-index: 100;
-        }
-
-        /* Media Queries para Mobile */
-        @media (max-width: 768px) {
-            #mobile-menu {
-                display: flex;
-            }
-
-            #sidebar {
-                display: none;
-                width: 100%;
-                height: auto;
-                position: fixed;
-                top: 60px;
-                left: 0;
-            }
-
-            #sidebar.active {
-                display: flex;
-            }
-
-            #content {
-                margin-left: 0;
-                padding: 80px 0 20px 0;
-            }
-
-            #content h1 {
-                font-size: 2rem;
-                padding: 0 15px;
-            }
-
-            .subtitle {
-                font-size: 1rem;
-                padding: 0 15px;
-            }
-
-            .dataset-info {
-                padding: 0 15px;
-            }
-
-            .search-bar {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .form-row {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .form-row input,
-            .form-row select {
-                width: 100%;
-                max-width: 300px;
-            }
-
-            .search-bar button {
-                width: 100%;
-                max-width: 300px;
-            }
-
-            .opts {
-                justify-content: center;
-            }
-
-            .block {
-                margin: 10px 15px;
-                padding: 60px 20px 20px 20px;
-            }
-
-            .copy-btn {
-                top: 15px;
-                right: 15px;
-                padding: 5px 7px;
-                font-size: 14px;
-            }
-
-            .ementa-content {
-                line-height: 1.4;
-                text-align: justify;
-                font-size: 0.9rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            #content {
-                padding: 70px 0 15px 0;
-            }
-
-            .search-bar input,
-            .search-bar select {
-                max-width: 100%;
-            }
-
-            .search-bar button {
-                max-width: 100%;
-            }
-
-            .opts {
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .help {
-                margin: 10px 15px 0 15px;
-            }
-        }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contador de Prazos Cíveis — TJGO (2023–2026)</title>
+  <style>
+    :root{
+      --paper:#f8f6f2; --paper-3:#eee9e1; --card:#ffffff;
+      --ink:#2b2b2b; --sepia:#7a6f61; --graphite:#3a3a3a;
+      --line:#e3ded6; --line-2:#d8d1c4;
+      --useful:#4d6b4d; --holiday:#7a6f61; --recess:#6a1f1f; --ash:#8a6d3b;
+      --row:#fbf9f5; --row2:#f5f1ea; --hl:#f1ede5; --bad:var(--recess);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--paper); color:var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+
+    /* ===== LAYOUT DESKTOP ===== */
+    .desktop-layout {
+      display: none;
+    }
+
+    /* Sidebar fixa de retorno */
+    #sidebar-back{
+      position:fixed; top:0; left:0; width:200px; height:100%;
+      background:var(--graphite); color:white; display:flex; flex-direction:column;
+      padding-top:10px; box-shadow:2px 0 6px rgba(0,0,0,.25); z-index:30;
+    }
+    #sidebar-back a{
+      display:block; padding:12px 18px; color:white; text-decoration:none; font-weight:600;
+      border-left:3px solid transparent; transition:background .2s ease;
+    }
+    #sidebar-back a:hover{background:rgba(255,255,255,.12)}
+    #clock{
+      margin-top:auto;
+      padding:12px 18px;
+      text-align:center;
+      font-weight:600;
+      font-size:.95rem;
+      border-top:1px solid rgba(255,255,255,.15);
+      color:white;
+      opacity:.85;
+    }   
+
+    /* deslocar conteúdo */
+    .desktop-layout header, .desktop-layout main, .desktop-layout footer{margin-left:200px}
+
+    .desktop-layout header{
+      background:var(--graphite); color:#fff;
+      padding:28px 20px 22px;
+    }
+    .desktop-layout header h1{margin:0 0 8px; font-weight:800}
+    .desktop-layout header .legal{margin-top:10px; font-size:.95rem; line-height:1.35; opacity:.94}
+
+    .desktop-layout main{
+      max-width:1100px;
+      margin:24px auto 48px;  
+      padding:0 16px;
+    }
+    .card{
+      background:var(--card); border-radius:18px; border:1px solid var(--line);
+      box-shadow:0 10px 25px rgba(2,12,27,.06); padding:18px 18px 12px;
+    }
+    .grid{display:grid; grid-template-columns:1.1fr 1fr .9fr; gap:12px}
+    .field{display:flex; flex-direction:column; gap:6px}
+    label{font-size:.92rem; color:#4a4743; font-weight:600}
+    input[type="date"], select, input[type="number"]{
+      width:100%; padding:12px 14px; border:1px solid #e5e1db; border-radius:12px; font-size:1rem;
+      background:#fff; outline:none;
+    }
+
+    .actions{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+
+    .btn{
+      padding:12px 14px; border-radius:12px; cursor:pointer; font-weight:700;
+      border:1px solid transparent; letter-spacing:.25px;
+    }
+    .btn.primary{background:var(--graphite); color:#fff;}
+    .btn.secondary{background:var(--sepia); color:#fff;}
+    .btn.ghost{background:transparent; border:1px solid #d6d0c7; color:var(--ink)}
+    .btn:hover{transform:translateY(-1px)}
+
+    .chips{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{
+      padding:8px 10px; background:transparent; border:1px solid #d6d0c7;
+      border-radius:999px; font-weight:700; cursor:pointer; font-size:.93rem;
+    }
+    .chip:hover{background:var(--paper-3)}
+    .chip[data-d="5"]{border-color:var(--ash); color:var(--ash)}
+    .chip[data-d="15"]{border-color:var(--useful); color:var(--useful)}
+    .chip[data-d="30"]{border-color:var(--useful); color:var(--ash)}
+
+    .final-date{margin:16px 0 6px; padding:14px 16px; background:var(--hl);
+      border:1px dashed var(--line-2); border-radius:12px; font-weight:800;}
+    table{width:100%; border-collapse:separate; border-spacing:0; margin-top:12px; font-size:.95rem}
+    thead th{position:sticky; top:0; background:#fff; z-index:2; padding:10px 12px; border-bottom:1px solid var(--line);}
+    tbody td{padding:10px 12px; border-bottom:1px dashed #e7e2da}
+    tbody tr:nth-child(odd){background:var(--row)}
+    tbody tr:nth-child(even){background:var(--row2)}
+
+    .tag{padding:4px 8px; border-radius:999px; font-weight:700; font-size:.82rem; display:inline-block; border:1px solid transparent;}
+    .tag.ok{background:rgba(77,107,77,.1); color:var(--useful); border-color:rgba(77,107,77,.25)}
+    .tag.warn{background:rgba(122,111,97,.1); color:var(--holiday); border-color:rgba(122,111,97,.25)}
+    .tag.recesso{background:rgba(106,31,31,.1); color:var(--recess); border-color:rgba(106,31,31,.25)}
+    .tag.info{background:rgba(138,109,59,.1); color:var(--ash); border-color:rgba(138,109,59,.25)}
+
+    .desktop-layout footer{max-width:1100px; margin:24px auto 60px; padding:0 16px; color:#6b655d; font-size:.9rem}
+    .code{padding:2px 6px; border-radius:6px; border:1px solid var(--line); background:#f4f1eb}
+    .danger{color:var(--recess); font-weight:800}
+
+    /* ===== LAYOUT MOBILE ===== */
+    .mobile-layout {
+      display: none;
+    }
+
+    /* Header responsivo */
+    .mobile-layout header{
+      background:var(--graphite); color:#fff;
+      padding:20px 16px;
+      position:sticky;
+      top:0;
+      z-index:20;
+      box-shadow:0 2px 10px rgba(0,0,0,.15);
+    }
+    .mobile-layout header h1{
+      margin:0 0 8px; 
+      font-weight:800;
+      font-size:1.4rem;
+    }
+    .mobile-layout header .legal{
+      margin-top:10px; 
+      font-size:.9rem; 
+      line-height:1.35; 
+      opacity:.94;
+    }
+    .legal-toggle{
+      display:inline-block;
+      margin-top:8px;
+      padding:6px 10px;
+      background:rgba(255,255,255,.15);
+      border-radius:6px;
+      font-size:.85rem;
+      cursor:pointer;
+    }
+
+    /* Menu móvel */
+    #mobile-menu{
+      position:fixed;
+      bottom:0;
+      left:0;
+      right:0;
+      background:var(--graphite);
+      display:flex;
+      justify-content:space-around;
+      padding:10px 0;
+      z-index:30;
+      box-shadow:0 -2px 10px rgba(0,0,0,.15);
+    }
+    #mobile-menu a, #mobile-menu button{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      background:none;
+      border:none;
+      color:white;
+      font-size:.8rem;
+      padding:8px 12px;
+      text-decoration:none;
+      border-radius:8px;
+      transition:background .2s;
+    }
+    #mobile-menu a:hover, #mobile-menu button:hover{
+      background:rgba(255,255,255,.12);
+    }
+    #mobile-menu .icon{
+      font-size:1.2rem;
+      margin-bottom:4px;
+    }
+
+    .mobile-layout main{
+      max-width:100%;
+      margin:0 auto 80px;  
+      padding:16px;
+    }
+    
+    .mobile-grid{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    
+    .mobile-field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    
+    .mobile-layout input[type="date"], .mobile-layout select, .mobile-layout input[type="number"]{
+      width:100%; 
+      padding:14px 16px; 
+      border:1px solid #e5e1db; 
+      border-radius:12px; 
+      font-size:1rem;
+      background:#fff; 
+      outline:none;
+      -webkit-appearance:none;
+      min-height:50px;
+    }
+
+    .mobile-actions{
+      display:flex; 
+      flex-direction:column;
+      gap:12px; 
+      margin-top:16px;
+    }
+
+    .mobile-btn{
+      padding:14px 18px; 
+      border-radius:12px; 
+      cursor:pointer; 
+      font-weight:700;
+      border:1px solid transparent; 
+      letter-spacing:.25px;
+      font-size:1rem;
+      min-height:50px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex:1;
+    }
+    .mobile-btn.primary{background:var(--graphite); color:#fff;}
+    .mobile-btn.secondary{background:var(--sepia); color:#fff;}
+    .mobile-btn.ghost{background:transparent; border:1px solid #d6d0c7; color:var(--ink)}
+
+    .mobile-chips{
+      display:flex; 
+      gap:8px; 
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .mobile-chip{
+      padding:12px 14px; 
+      background:transparent; 
+      border:1px solid #d6d0c7;
+      border-radius:999px; 
+      font-weight:700; 
+      cursor:pointer; 
+      font-size:.93rem;
+      min-width:60px;
+      text-align:center;
+    }
+    .mobile-chip:hover{background:var(--paper-3)}
+    .mobile-chip[data-d="5"]{border-color:var(--ash); color:var(--ash)}
+    .mobile-chip[data-d="15"]{border-color:var(--useful); color:var(--useful)}
+    .mobile-chip[data-d="30"]{border-color:var(--useful); color:var(--ash)}
+
+    .mobile-final-date{
+      margin:16px 0 12px; 
+      padding:16px; 
+      background:var(--hl);
+      border:1px dashed var(--line-2); 
+      border-radius:12px; 
+      font-weight:800;
+      font-size:1.1rem;
+      text-align:center;
+    }
+    
+    /* Tabela responsiva */
+    .table-container{
+      max-height:400px; 
+      overflow:auto; 
+      margin-top:12px; 
+      border:1px solid var(--line); 
+      border-radius:12px; 
+      background:#fff;
+    }
+    
+    .mobile-layout table{
+      width:100%; 
+      border-collapse:separate; 
+      border-spacing:0; 
+      font-size:.95rem;
+      min-width:600px;
+    }
+    
+    .mobile-layout thead th{
+      position:sticky; 
+      top:0; 
+      background:#fff; 
+      z-index:2; 
+      padding:12px 10px; 
+      border-bottom:1px solid var(--line);
+      font-size:.9rem;
+    }
+    
+    .mobile-layout tbody td{
+      padding:12px 10px; 
+      border-bottom:1px dashed #e7e2da;
+      font-size:.9rem;
+    }
+
+    .mobile-layout footer{
+      max-width:100%; 
+      margin:24px auto 100px; 
+      padding:0 16px; 
+      color:#6b655d; 
+      font-size:.9rem;
+    }
+
+    /* Modal para informações legais */
+    .modal{
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      background:rgba(0,0,0,.7);
+      z-index:40;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .modal-content{
+      background:var(--card);
+      border-radius:16px;
+      padding:24px;
+      max-width:500px;
+      width:100%;
+      max-height:80vh;
+      overflow-y:auto;
+    }
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+    }
+    .modal-close{
+      background:none;
+      border:none;
+      font-size:1.5rem;
+      cursor:pointer;
+      color:var(--sepia);
+    }
+
+    /* Mostrar layout correto baseado no dispositivo */
+    @media (min-width: 768px) {
+      .desktop-layout {
+        display: block;
+      }
+      .mobile-layout {
+        display: none !important;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .desktop-layout {
+        display: none !important;
+      }
+      .mobile-layout {
+        display: block;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div id="mobile-menu">
-        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-        <span style="color: white; font-weight: bold;">6ª Câmara Cível</span>
-        <div style="width: 40px;"></div>
-    </div>
 
-    <div id="sidebar">
-        <a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a>
-        <div id="clock">
-            <div id="clock-time">--:--:--</div>
-            <div id="clock-date">--/--/----</div>
+<!-- ===== LAYOUT DESKTOP ===== -->
+<div class="desktop-layout">
+  <div id="sidebar-back">
+    <a href="index.html">⬅ Voltar ao Início</a>
+    <div id="clock"></div>
+  </div>
+
+  <header>
+    <h1>Contador de Prazos Cíveis — TJGO</h1>
+    <p class="legal">
+      <strong>Leitura</strong>: contagem no primeiro dia útil subsequente.<br>
+      <strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação (D2).<br>
+      <strong>Quarta-Feira de Cinzas (QF)</strong>: não se inicia nem termina; conta-se durante o curso.<br>
+      <strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.
+    </p>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="grid">
+        <div class="field">
+          <label for="tipo-desktop">Tipo de marco inicial</label>
+          <select id="tipo-desktop">
+            <option value="leitura">Leitura (intimação lida)</option>
+            <option value="expedicao">Expedição (Dia em que o ato foi gerado no Projudi)</option>
+          </select>
         </div>
-    </div>
 
-    <div id="content">
-        <h1>Pesquisa Integrada</h1>
-        <div class="subtitle">Busca em todas as bases: Jurisprudência, Súmulas TJGO, STJ e STF</div>
-        <div id="datasetInfo" class="dataset-info">Pronto para buscar em todas as bases simultaneamente...</div>
+        <div class="field">
+          <label for="dataBase-desktop">Data Inicial</label>
+          <input type="date" id="dataBase-desktop" />
+        </div>
 
-        <p class="notice">
-            Use <strong>aspas</strong> para frases exatas; <strong>E</strong> ou <strong>;</strong> para termos obrigatórios; 
-            <strong>OU</strong> para alternância; <strong>NÃO</strong> ou <strong>-</strong> para excluir; 
-            <strong>*</strong> como curinga. Parênteses são aceitos. Acentos são ignorados.
+        <div class="field">
+          <label for="dias-desktop">Dias de prazo (dias úteis)</label>
+          <input type="number" id="dias-desktop" min="1" step="1" value="15"/>
+        </div>
+      </div>
+
+      <div class="actions" style="margin-top:12px">
+        <button class="btn primary" id="btnCalcular-desktop">Calcular prazo</button>
+        <div class="chips">
+          <button class="chip" data-d="5">5 dias</button>
+          <button class="chip" data-d="15">15 dias</button>
+          <button class="chip" data-d="30">30 dias</button>
+        </div>
+        <span class="muted">Feriados TJGO (2023–2026), recesso (20/12–20/01), fins de semana e Quarta-feira de Cinzas com regra especial já aplicados.</span>
+      </div>
+
+      <div class="result" id="resultado-desktop" style="display:none">
+        <div class="final-date" id="finalDate-desktop"></div>
+        <div class="toolbar">
+          <button class="btn secondary" id="btnCopiar-desktop">Copiar resumo</button>
+          <button class="btn ghost" id="btnCSV-desktop">Exportar CSV</button>
+        </div>
+        <div style="max-height:430px; overflow:auto; margin-top:6px; border:1px solid var(--line); border-radius:12px; background:#fff">
+          <table id="tabela-desktop">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Data</th>
+                <th>Dia da semana</th>
+                <th>Classificação</th>
+                <th>Observação</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="muted small">Planilha de auditoria contínua: todos os dias entre o marco e a data final são listados, com justificativa quando não contados.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="small">
+    <p><strong>Fontes oficiais:</strong> Feriados do Tribunal de Justiça do Estado de Goiás (2023–2026) e Recesso Forense, conforme calendários publicados. Este utilitário não substitui a conferência oficial nos autos e normativos aplicáveis.</p>
+  </footer>
+</div>
+
+<!-- ===== LAYOUT MOBILE ===== -->
+<div class="mobile-layout">
+  <header>
+    <h1>Contador de Prazos Cíveis — TJGO</h1>
+    <p class="legal">
+      <strong>Leitura</strong>: contagem no primeiro dia útil subsequente.<br>
+      <strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação (D2).<br>
+      <strong>Quarta-Feira de Cinzas (QF)</strong>: não se inicia nem termina; conta-se durante o curso.<br>
+      <strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.
+    </p>
+    <div class="legal-toggle" id="toggleLegal">ℹ️ Mais informações</div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="mobile-grid">
+        <div class="mobile-field">
+          <label for="tipo-mobile">Tipo de marco inicial</label>
+          <select id="tipo-mobile">
+            <option value="leitura">Leitura (intimação lida)</option>
+            <option value="expedicao">Expedição (Dia em que o ato foi gerado no Projudi)</option>
+          </select>
+        </div>
+
+        <div class="mobile-field">
+          <label for="dataBase-mobile">Data Inicial</label>
+          <input type="date" id="dataBase-mobile" />
+        </div>
+
+        <div class="mobile-field">
+          <label for="dias-mobile">Dias de prazo (dias úteis)</label>
+          <input type="number" id="dias-mobile" min="1" step="1" value="15"/>
+        </div>
+      </div>
+
+      <div class="mobile-actions">
+        <button class="mobile-btn primary" id="btnCalcular-mobile">Calcular prazo</button>
+        <div class="mobile-chips">
+          <button class="mobile-chip" data-d="5">5 dias</button>
+          <button class="mobile-chip" data-d="15">15 dias</button>
+          <button class="mobile-chip" data-d="30">30 dias</button>
+        </div>
+      </div>
+      <div style="margin-top:12px; font-size:.9rem; color:#7a6f61; text-align:center;">
+        Feriados TJGO (2023–2026), recesso (20/12–20/01), fins de semana e Quarta-feira de Cinzas com regra especial já aplicados.
+      </div>
+
+      <div class="result" id="resultado-mobile" style="display:none">
+        <div class="mobile-final-date" id="finalDate-mobile"></div>
+        <div class="mobile-actions">
+          <button class="mobile-btn secondary" id="btnCopiar-mobile">Copiar resumo</button>
+          <button class="mobile-btn ghost" id="btnCSV-mobile">Exportar CSV</button>
+        </div>
+        <div class="table-container">
+          <table id="tabela-mobile">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Data</th>
+                <th>Dia</th>
+                <th>Tipo</th>
+                <th>Observação</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p style="margin-top:12px; font-size:.85rem; color:#7a6f61; text-align:center;">
+          Planilha de auditoria contínua: todos os dias entre o marco e a data final são listados, com justificativa quando não contados.
         </p>
+      </div>
+    </section>
+  </main>
 
-        <div class="search-bar">
-            <div class="form-row">
-                <input type="text" id="terms" placeholder='Ex.: "dano moral" E responsabilidade OU contrato*'>
-                <input type="date" id="startDate">
-                <input type="date" id="endDate">
-                <select id="dataSource">
-                    <option value="">Todas as Bases</option>
-                    <option value="0">Jurisprudência</option>
-                    <option value="2110972132">Súmulas do TJGO</option>
-                    <option value="1277187400">Súmulas do STJ</option>
-                    <option value="503544784">Súmulas do STF</option>
-                </select>
-                <select id="relator">
-                    <option value="">Relator (todos)</option>
-                </select>
-                <div class="opts">
-                    <label><input type="checkbox" id="fuzzy"> Busca aproximada</label>
-                </div>
-            </div>
-            <div class="button-container">
-                <button id="searchButton" onclick="performSearch()">Consultar</button>
-            </div>
-        </div>
+  <footer>
+    <p><strong>Fontes oficiais:</strong> Feriados do Tribunal de Justiça do Estado de Goiás (2023–2026) e Recesso Forense, conforme calendários publicados. Este utilitário não substitui a conferência oficial nos autos e normativos aplicáveis.</p>
+  </footer>
 
-        <div class="help" id="helpBox">
-            <details>
-                <summary>Como pesquisar (clique para expandir)</summary>
-                <div style="margin-top:10px">
-                    <p><strong>Exato com aspas</strong>: <code>"erro material"</code></p>
-                    <p><strong>E (AND)</strong>: <code>termo1 E termo2</code> ou <code>termo1;termo2</code></p>
-                    <p><strong>OU (OR)</strong>: <code>cláusulaA OU cláusulaB</code></p>
-                    <p><strong>NÃO (NOT)</strong>: <code>NÃO termo</code> ou <code>-termo</code></p>
-                    <p><strong>Parênteses</strong>: <code>BACEN E ("dano moral" OU "dano extrapatrimonial")</code></p>
-                    <p><strong>Curinga *</strong>: <code>contrat*</code> encontra "contrato", "contratual"</p>
-                    <p><strong>Busca aproximada</strong>: marque para aceitar pequenas variações.</p>
-                    <p style="margin-top:8px;color:#666">Dica: acentos são ignorados tanto na busca quanto no destaque.</p>
-                </div>
-            </details>
-        </div>
+  <!-- Menu móvel -->
+  <div id="mobile-menu">
+    <a href="index.html">
+      <span class="icon">🏠</span>
+      <span>Início</span>
+    </a>
+    <button id="mobileCalc">
+      <span class="icon">📅</span>
+      <span>Calcular</span>
+    </button>
+    <button id="mobileCopy">
+      <span class="icon">📋</span>
+      <span>Copiar</span>
+    </button>
+    <button id="mobileExport">
+      <span class="icon">📤</span>
+      <span>Exportar</span>
+    </button>
+  </div>
+</div>
 
-        <div id="resultCount"></div>
-        <div id="allBlocks"></div>
-        <div id="pagination" class="pagination"></div>
+<!-- Modal para informações legais -->
+<div class="modal" id="legalModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 style="margin:0;">Informações Legais</h2>
+      <button class="modal-close" id="closeModal">&times;</button>
     </div>
-    
-    <div id="version-tag">v.3.4 (Fix Logic)</div>
+    <div>
+      <p><strong>Leitura</strong>: contagem no primeiro dia útil subsequente.</p>
+      <p><strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação (D2).</p>
+      <p><strong>Quarta-Feira de Cinzas (QF)</strong>: não se inicia nem termina; conta-se durante o curso.</p>
+      <p><strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.</p>
+      <p><strong>Feriados TJGO</strong>: Incluem feriados nacionais, estaduais e municipais conforme calendário oficial do TJGO.</p>
+    </div>
+  </div>
+</div>
 
-    <script>
-        // Variáveis globais
-        let dataset = []; 
-        let filteredData = [];
-        let currentSearchTerms = '';
-        let currentPage = 1;
-        const resultsPerPage = 50;
+<script>
+  // ---------- Utilidades de datas ----------
+  const fmtBR = (d)=>{
+    const pad = (n)=> String(n).padStart(2,'0');
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+  };
+  const diaSemana = (d)=>["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"][d.getDay()];
+  const diaSemanaMobile = (d)=>["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()];
+  const ymd = (d)=>{
+    const pad=(n)=> String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  };
+  const parseISO = (s)=>{
+    const [Y,M,D] = s.split('-').map(Number);
+    const dt = new Date(Date.UTC(Y, M-1, D));
+    return new Date(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
+  };
+  const addDays = (d, n)=>{
+    const nd = new Date(d);
+    nd.setDate(nd.getDate()+n);
+    return nd;
+  };
 
-        // URLs das planilhas
-        const SPREADSHEET_BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub';
-        
-        // Configuração das bases
-        const DATA_SOURCES = {
-            '0': { name: 'Jurisprudência', gid: '0' },
-            '2110972132': { name: 'Súmulas do TJGO', gid: '2110972132' },
-            '1277187400': { name: 'Súmulas do STJ', gid: '1277187400' },
-            '503544784': { name: 'Súmulas do STF', gid: '503544784' }
-        };
+  // ---------- Base de feriados TJGO (2023-2026) ----------
+  const HOLIDAYS = new Map(); // key: 'YYYY-MM-DD' → {name, yearTag}
+  const ASH = new Set(); // Quarta-Feira de Cinzas (datas específicas)
 
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
-            updateClock();
-            setInterval(updateClock, 1000);
-            
-            document.getElementById('relator').disabled = true;
+  function add(name, dates, {ash=false}={}) {
+    dates.forEach(s=> {
+      HOLIDAYS.set(s, {name, yearTag: s.slice(0,4)});
+      if(ash) ASH.add(s);
+    });
+  }
+  function addRange(name, fromYMD, toYMD){
+    let d = parseISO(fromYMD);
+    const end = parseISO(toYMD);
+    while(d <= end){
+      HOLIDAYS.set(ymd(d), {name, yearTag: d.getFullYear().toString()});
+      d = addDays(d, 1);
+    }
+  }
 
-            document.getElementById('terms').addEventListener('keypress', function(event) {
-                if (event.key === 'Enter') performSearch();
-            });
+  // 2023
+  add("Confraternização Universal (Feriado Nacional)", ["2023-01-01"]);
+  add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2023-02-20","2023-02-21"]);
+  add("Quarta-feira de Cinzas (regra especial)", ["2023-02-22"], {ash:true});
+  add("Semana Santa — Feriado no Tribunal", ["2023-04-05","2023-04-06"]);
+  add("Paixão de Cristo (Feriado Nacional)", ["2023-04-07"]);
+  add("Tiradentes (Feriado Nacional)", ["2023-04-21"]);
+  add("Dia do Trabalho (Feriado Nacional)", ["2023-05-01"]);
+  add("Nossa Senhora Auxiliadora (Feriado Municipal: Goiânia, Iporá, Leopoldo de Bulhões, Senador Canedo)", ["2023-05-24"]);
+  add("Corpus Christi (Feriado Nacional)", ["2023-06-08"]);
+  add("Fundação da Cidade de Goiás (Feriado no Tribunal)", ["2023-07-26"]);
+  add("Independência do Brasil (Feriado Nacional)", ["2023-09-07"]);
+  add("Nossa Senhora Aparecida (Feriado Nacional)", ["2023-10-12"]);
+  add("Comemorativo pedra fundamental/Aniversário de Goiânia (Feriado no Tribunal)", ["2023-10-24"]);
+  add("Dia do Servidor Público (Feriado Estadual)", ["2023-10-28"]);
+  add("Finados (Feriado Nacional)", ["2023-11-02"]);
+  add("Proclamação da República (Feriado Nacional)", ["2023-11-15"]);
+  add("Dia da Justiça (Feriado no Tribunal)", ["2023-12-08"]);
+  add("Natal (Feriado Nacional)", ["2023-12-25"]);
+  addRange("Recesso Forense", "2023-12-20", "2024-01-20");
 
-            document.getElementById('dataSource').addEventListener('change', function() {
-                const selectedValue = this.value;
-                const relatorSelect = document.getElementById('relator');
-                
-                resetSearch();
-                dataset = []; 
+  // 2024
+  add("Ano Novo (Feriado Nacional)", ["2024-01-01"]);
+  add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2024-02-12","2024-02-13"]);
+  add("Quarta-feira de Cinzas (regra especial)", ["2024-02-14"], {ash:true});
+  add("Semana Santa — Feriado no Tribunal", ["2024-03-27","2024-03-28","2024-03-29"]);
+  add("Dia do Trabalho (Feriado Nacional)", ["2024-05-01"]);
+  add("Nossa Senhora Auxiliadora (Feriado Municipal: TJ/Comarcas específicas)", ["2024-05-24"]);
+  add("Corpus Christi (Feriado Nacional)", ["2024-05-30"]);
+  add("Ponto Facultativo — PJ estadual", ["2024-05-31"]);
+  add("Fundação da Cidade de Goiás (feriado de 26/07 alterado para 22/07)", ["2024-07-22"]);
+  add("Aniversário de Goiânia (Feriado no Tribunal e em todas as comarcas)", ["2024-10-24"]);
+  add("Dia do Servidor Público (feriado do dia 28/10 alterado para 01/11)", ["2024-11-01"]);
+  add("Proclamação da República (Feriado Nacional)", ["2024-11-15"]);
+  add("Dia da Consciência Negra (Feriado Nacional)", ["2024-11-20"]);
+  add("Natal (Feriado Nacional)", ["2024-12-25"]);
+  addRange("Recesso Forense", "2024-12-20", "2025-01-20");
 
-                if (selectedValue === '0') { 
-                    relatorSelect.disabled = false;
-                    loadDataset(); 
-                } else {
-                    relatorSelect.value = '';
-                    relatorSelect.disabled = true; 
-                    
-                    updateInterfaceForDataSource(selectedValue === '' ? 'all' : selectedValue);
-                    document.getElementById('datasetInfo').textContent = selectedValue === ''
-                        ? 'Pronto para buscar em todas as bases simultaneamente'
-                        : `Pronto para buscar em ${DATA_SOURCES[selectedValue].name}`;
-                    setSearchButtonState(false);
-                }
-            });
+  // 2025
+  add("Ano Novo (Feriado Nacional)", ["2025-01-01"]);
+  add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2025-03-03","2025-03-04"]);
+  add("Quarta-feira de Cinzas (regra especial)", ["2025-03-05"], {ash:true});
+  add("Semana Santa — Feriado no Tribunal", ["2025-04-16","2025-04-17","2025-04-18"]);
+  add("Tiradentes (Feriado Nacional)", ["2025-04-21"]);
+  add("Dia do Trabalho (Feriado Nacional)", ["2025-05-01"]);
+  add("Nossa Senhora Auxiliadora (Feriado Municipal: TJ/Comarcas específicas)", ["2025-05-24"]);
+  add("Corpus Christi (Feriado Nacional)", ["2025-06-19"]);
+  add("Fundação da Cidade de Goiás (Feriado no Tribunal)", ["2025-07-26"]);
+  add("Independência do Brasil (Feriado Nacional)", ["2025-09-07"]);
+  add("Nossa Senhora Aparecida (Feriado Nacional)", ["2025-10-12"]);
+  add("Aniversário de Goiânia (Feriado no Tribunal e em todas as comarcas)", ["2025-10-24"]);
+  add("Ponto Facultativo", ["2025-10-27"]);
+  add("Dia do Servidor Público (Feriado Estadual)", ["2025-10-28"]);
+  add("Finados (Feriado Nacional)", ["2025-11-02"]);
+  add("Proclamação da República (Feriado Nacional)", ["2025-11-15"]);
+  add("Dia da Consciência Negra (Feriado Nacional)", ["2025-11-20"]);
+  add("Ponto Facultativo", ["2025-11-21"]);
+  add("Dia da Justiça (Feriado — Art. 123 RITJGO)", ["2025-12-08"]);
+  add("Natal (Feriado Nacional)", ["2025-12-25"]);
+  addRange("Recesso Forense", "2025-12-20", "2026-01-20");
 
-            setTimeout(() => document.getElementById('terms').focus(), 500);
-        });
+  // 2026 (incluso para cobertura)
+  add("Ano Novo (Feriado Nacional)", ["2026-01-01"]);
+  add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2026-02-16","2026-02-17"]);
+  add("Quarta-feira de Cinzas (regra especial)", ["2026-02-18"], {ash:true});
+  add("Semana Santa — Feriado no Tribunal", ["2026-04-03","2026-04-04","2026-04-05"]);
+  add("Tiradentes (Feriado Nacional)", ["2026-04-21"]);
+  add("Dia do Trabalho (Feriado Nacional)", ["2026-05-01"]);
+  addRange("Recesso Forense", "2026-12-20", "2027-01-20"); // apenas placeholder caso necessário
 
-        // ============== FUNÇÕES DE UI E UTILS ==============
+  // ---------- Helpers ----------
+  function isWeekend(d){ const g = d.getDay(); return g===0 || g===6; }
+  function isAshWednesday(d){ return ASH.has(ymd(d)); }
+  function holidayInfo(d){ const k=ymd(d); return HOLIDAYS.get(k) || null; }
 
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
-        }
+  // mode: 'counting' (contagem em curso, QF conta) | 'start_end' (início/fim, QF bloqueia)
+  function isHoliday(d, mode='counting'){
+    const info = holidayInfo(d);
+    if(info){
+      if(isAshWednesday(d)){
+        return mode === 'start_end' ? info : null;
+      }
+      return info;
+    }
+    return null;
+  }
 
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('clock-time').textContent = now.toLocaleTimeString('pt-BR');
-            document.getElementById('clock-date').textContent = now.toLocaleDateString('pt-BR', { 
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-            });
-        }
+  function isBusinessDay(d, mode='counting'){
+    if(isWeekend(d)) return false;
+    const h = isHoliday(d, mode);
+    if(h) return false;
+    return true;
+  }
+  function nextBusinessDay(d, mode='counting'){
+    let cur = new Date(d);
+    while(!isBusinessDay(cur, mode)) cur = addDays(cur,1);
+    return cur;
+  }
 
-        function showAlert(message, type = 'error') {
-            const existingAlert = document.querySelector('.alert');
-            if (existingAlert) existingAlert.remove();
-            
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type}`;
-            alert.textContent = message;
-            
-            document.getElementById('content').insertBefore(alert, document.getElementById('resultCount'));
-            
-            setTimeout(() => alert.remove(), type === 'success' ? 5000 : 10000);
-        }
+  function reasonNonUseful(d, mode='counting'){
+    // Prioridade: Recesso > Feriado > QF(start_end) > Fim de semana
+    const h = holidayInfo(d);
+    if(h){
+      if(h.name.toLowerCase().includes('recesso')) return 'Recesso forense';
+      if(isAshWednesday(d) && mode==='start_end') return 'QF — não inicia/não finaliza';
+      return `Feriado — ${h.name}`;
+    }
+    if(isWeekend(d)) return 'Fim de semana';
+    if(isAshWednesday(d) && mode==='start_end') return 'QF — não inicia/não finaliza';
+    return '';
+  }
 
-        function setSearchButtonState(loading = false, text = null) {
-            const button = document.getElementById('searchButton');
-            button.innerHTML = loading ? '<span class="spinner"></span> Consultando...' : (text || 'Consultar');
-            button.disabled = loading;
-        }
+  function classifyDay(d, mode='counting', isMobile = false){
+    const obj = {date: new Date(d), dow: isMobile ? diaSemanaMobile(d) : diaSemana(d), tag: '', badge:'', obs:[], final:false};
 
-        function updateInterfaceForDataSource(source) {
-            const title = document.querySelector('h1');
-            const subtitle = document.querySelector('.subtitle');
-            
-            if (source === 'all') {
-                title.textContent = 'Pesquisa Integrada';
-                subtitle.textContent = 'Busca em todas as bases: Jurisprudência, Súmulas TJGO, STJ e STF';
-            } else if (DATA_SOURCES[source]) {
-                const sourceInfo = DATA_SOURCES[source];
-                title.textContent = source === '0' ? 'Pesquisa de Jurisprudência' : 'Pesquisa de Súmulas';
-                subtitle.textContent = sourceInfo.name;
-            }
-        }
-        
-        function resetSearch() {
-            document.getElementById('allBlocks').innerHTML = '';
-            document.getElementById('resultCount').textContent = '';
-            document.getElementById('pagination').innerHTML = '';
-            const relatorSelect = document.getElementById('relator');
-            relatorSelect.innerHTML = '<option value="">Relator (todos)</option>';
-        }
+    // Fim de semana
+    if(isWeekend(d)){
+      obj.tag='Não útil'; obj.badge='warn';
+      obj.obs.push('Fim de semana');
+      return obj;
+    }
 
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            try {
-                const date = new Date(dateString);
-                if (!isNaN(date.getTime())) return date.toLocaleDateString('pt-BR');
-                const parts = dateString.split('/');
-                if (parts.length === 3) return `${parts[0]}/${parts[1]}/${parts[2]}`;
-                return dateString;
-            } catch (e) {
-                return dateString;
-            }
-        }
+    // Feriados e recesso
+    const h = isHoliday(d, mode);
+    if(h){
+      const isRec = h.name.toLowerCase().includes('recesso');
+      obj.tag = isRec ? 'Recesso' : 'Não útil';
+      obj.badge = isRec ? 'recesso' : 'warn';
+      obj.obs.push(isRec ? 'Recesso forense' : h.name);
+      if(isAshWednesday(d) && mode==='start_end'){ obj.obs = ['QF — não inicia/não finaliza']; obj.badge='info'; }
+      return obj;
+    }
 
-        function parseDate(dateString) {
-            if (!dateString) return null;
-            try {
-                const parts = dateString.split('/');
-                if (parts.length === 3) {
-                    const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
-                    return !isNaN(date.getTime()) ? date : null;
-                }
-                const date = new Date(dateString);
-                return !isNaN(date.getTime()) ? date : null;
-            } catch (e) {
-                return null;
-            }
-        }
+    // Quarta-feira de Cinzas — durante contagem é útil
+    if(isAshWednesday(d) && mode==='counting'){
+      obj.tag='Útil'; obj.badge='info'; obj.obs.push('QF — contado (contagem em curso)');
+      return obj;
+    }
 
-        function populateFilters() {
-            const relators = [...new Set(dataset.map(item => item.Relator))].filter(Boolean);
-            const select = document.getElementById('relator');
-            
-            while (select.children.length > 1) select.removeChild(select.lastChild);
-            
-            relators.sort().forEach(relator => {
-                const option = document.createElement('option');
-                option.value = relator;
-                option.textContent = relator;
-                select.appendChild(option);
-            });
-        }
+    obj.tag='Útil'; obj.badge='ok';
+    return obj;
+  }
 
-        // LÓGICA DE PRIORIDADE (para ordenar Súmulas no topo)
-        function getSourcePriority(gid) {
-            if (['2110972132', '1277187400', '503544784'].includes(gid)) {
-                return 1; // Súmulas (mais alta)
-            }
-            return 2; // Jurisprudência (gid '0')
-        }
-
-        // AUXILIAR: Extrair texto de busca de qualquer item de forma robusta
-        function getItemSearchText(item) {
-            // Junta todos os campos possíveis para garantir que Súmulas (que têm colunas diferentes) sejam indexadas corretamente
-            const fields = [
-                item.Ementa, 
-                item.Enunciado, 
-                item.Conteúdo, 
-                item.Processo, 
-                item.Numero, 
-                item['Número'], 
-                item['Número da Súmula'], 
-                item['Numero_da_Sumula'],
-                item.Relator,
-                item.InteiroTeor
-            ];
-            // Filtra valores vazios/nulos e junta tudo em minúsculas
-            return fields.filter(val => val && typeof val === 'string').join(' ').toLowerCase();
-        }
-
-        // ============== FUNÇÕES DE DADOS E BUSCA ==============
-
-        function loadDataset() {
-            const dataSource = document.getElementById('dataSource').value;
-            if (dataSource !== '0') return; 
-
-            const sourceInfo = DATA_SOURCES[dataSource];
-            const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${sourceInfo.gid}&single=true&output=csv`;
-            
-            updateInterfaceForDataSource(dataSource);
-            document.getElementById('datasetInfo').textContent = `Conectando ao banco de dados ${sourceInfo.name}...`;
-            setSearchButtonState(true, 'Carregando dados...');
-            
-            Papa.parse(csvUrl, {
-                download: true,
-                header: true,
-                complete: function(results) {
-                    if (results.errors?.length > 0) {
-                        handleDataError('Erro na formatação dos dados');
-                        return;
-                    }
-                    
-                    dataset = results.data.filter(item => item && item.Processo);
-                    
-                    if (dataset.length === 0) {
-                        handleDataError('Nenhum dado encontrado na planilha');
-                        return;
-                    }
-                    
-                    updateDatasetInfo();
-                    populateFilters();
-                    setSearchButtonState(false);
-                    showAlert(`Base de dados carregada com ${dataset.length} registros.`, 'success');
-                },
-                error: function(error) {
-                    handleDataError('Erro ao carregar dados da planilha');
-                    console.error('Erro detalhado:', error);
-                }
-            });
-        }
-
-        function handleDataError(message) {
-            document.getElementById('datasetInfo').textContent = message;
-            showAlert(message, 'error');
-            setSearchButtonState(false);
-        }
-
-        function updateDatasetInfo() {
-            const dataSource = document.getElementById('dataSource').value;
-            const sourceName = DATA_SOURCES[dataSource]?.name || 'Base de dados';
-            
-            let latestDateString = '';
-            let latestDateValue = new Date(0); 
-
-            dataset.forEach(item => {
-                if (item.Publicação) {
-                    const itemDate = parseDate(item.Publicação); 
-                    
-                    if (itemDate && itemDate > latestDateValue) {
-                        latestDateValue = itemDate;
-                        latestDateString = item.Publicação; 
-                    }
-                }
-            });
-            
-            const updateText = latestDateString ? `Última atualização: ${latestDateString}` : '';
-            document.getElementById('datasetInfo').textContent = `${sourceName}: ${dataset.length} registros. ${updateText}`;
-        }
-
-        function performSearch() {
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('active');
-            }
-
-            const searchTerms = document.getElementById('terms').value;
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
-            const relator = document.getElementById('relator').value;
-            const useFuzzy = document.getElementById('fuzzy').checked;
-            const dataSource = document.getElementById('dataSource').value;
-            
-            if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-                showAlert('A data de início não pode ser maior que a data de fim.', 'error');
-                return;
-            }
-            
-            currentSearchTerms = searchTerms;
-            setSearchButtonState(true);
-            
-            setTimeout(async () => {
-                try {
-                    if (dataSource === '') {
-                        filteredData = await searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy);
-                    } else {
-                        const dataToFilter = dataSource === '0' ? dataset : await loadSingleDataset(`${SPREADSHEET_BASE_URL}?gid=${DATA_SOURCES[dataSource].gid}&single=true&output=csv`);
-
-                        filteredData = filterSingleDataset(dataToFilter, searchTerms, startDate, endDate, relator, useFuzzy, dataSource);
-                    }
-                    
-                    displayResults(filteredData);
-                    setSearchButtonState(false);
-                } catch (error) {
-                    console.error('Erro na busca:', error);
-                    showAlert('Erro durante a busca. Tente novamente. Detalhe: ' + error.message, 'error');
-                    setSearchButtonState(false);
-                }
-            }, 100);
-        }
-
-        function filterSingleDataset(dataToFilter, searchTerms, startDate, endDate, relator, useFuzzy, dataSource) {
-            
-            return dataToFilter.filter(item => {
-                const isJurisprudencia = dataSource === '0';
-                
-                if (isJurisprudencia && relator && item.Relator !== relator) return false;
-                
-                if (startDate || endDate) {
-                    const itemDate = parseDate(item.Publicação);
-                    if (!itemDate) return false;
-                    if (startDate && itemDate < new Date(startDate)) return false;
-                    if (endDate && itemDate > new Date(endDate)) return false;
-                }
-                
-                if (searchTerms) {
-                    // CORREÇÃO: Usa a função auxiliar que pega todos os campos, inclusive números de súmula
-                    const searchText = getItemSearchText(item);
-                    return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
-                }
-                
-                return true; 
-            }).map(item => ({
-                ...item,
-                dataSource: dataSource,
-                baseName: DATA_SOURCES[dataSource].name
-            })).sort((a, b) => {
-                const dateA = parseDate(a.Publicação) || new Date(0);
-                const dateB = parseDate(b.Publicação) || new Date(0);
-                return dateB - dateA;
-            });
-        }
-
-        async function searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy) {
-            const allGids = ['2110972132', '1277187400', '503544784', '0']; 
-            let allResults = [];
-            
-            setSearchButtonState(true, `Carregando bases...`);
-            
-            for (const gid of allGids) {
-                try {
-                    const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${gid}&single=true&output=csv`;
-                    const data = await loadSingleDataset(csvUrl);
-                    
-                    const filtered = data.filter(item => {
-                        // Filtros de Data (se existirem colunas de data)
-                        if (startDate || endDate) {
-                            const itemDate = parseDate(item.Publicação);
-                            if (itemDate) {
-                                if (startDate && itemDate < new Date(startDate)) return false;
-                                if (endDate && itemDate > new Date(endDate)) return false;
-                            }
-                        }
-
-                        if (searchTerms) {
-                             // CORREÇÃO: Usa a função auxiliar que pega todos os campos
-                            const searchText = getItemSearchText(item);
-                            return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
-                        }
-                        return true;
-                    }).map(item => ({
-                        ...item,
-                        dataSource: gid,
-                        baseName: DATA_SOURCES[gid].name
-                    }));
-                    
-                    allResults = allResults.concat(filtered);
-
-                } catch (error) {
-                    console.error(`Erro ao carregar base ${gid}:`, error);
-                    showAlert(`Aviso: Falha ao carregar a base ${DATA_SOURCES[gid].name}.`, 'warning');
-                }
-            }
-            
-            // LÓGICA DE ORDENAÇÃO MULTINÍVEL (Prioriza Súmulas, depois a data)
-            return allResults.sort((a, b) => {
-                const priorityA = getSourcePriority(a.dataSource);
-                const priorityB = getSourcePriority(b.dataSource);
-
-                // 1. Compara Prioridade (1 vs 2): Se diferente, Súmula (1) vem antes.
-                if (priorityA !== priorityB) {
-                    return priorityA - priorityB;
-                }
-
-                // 2. Se as prioridades são iguais, ordena por data (mais recente primeiro)
-                const dateA = parseDate(a.Publicação) || new Date(0);
-                const dateB = parseDate(b.Publicação) || new Date(0);
-                return dateB - dateA;
-            });
-        }
-
-        function loadSingleDataset(url) {
-            return new Promise((resolve, reject) => {
-                Papa.parse(url, {
-                    download: true,
-                    header: true,
-                    complete: function(results) {
-                        if (results.errors?.length > 0) {
-                            reject(new Error(results.errors.map(e => e.message).join(', ')));
-                        } else {
-                            // Filtra linhas vazias
-                            resolve(results.data.filter(item => item && Object.values(item).some(v => v)));
-                        }
-                    },
-                    error: (error) => reject(new Error(`Falha no download: ${error.message}`))
-                });
-            });
-        }
-
-        // =================================================================================
-        // FUNÇÃO DE BUSCA AVANÇADA CORRIGIDA
-        // =================================================================================
-        function portugueseAdvancedSearch(text, query, useFuzzy = false) {
-            if (!query?.trim()) return true;
-
-            // 1. Normalização inicial
-            const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            let normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
-            // 2. Proteção de Frases entre Aspas
-            // Substitui frases exatas por tokens temporários para não serem quebradas pelos operadores
-            const quotedTerms = [];
-            normalizedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
-                quotedTerms.push(p1.trim());
-                return `__QUOTED_${quotedTerms.length - 1}__`;
-            });
-
-            // 3. Tratamento de Parênteses Externos desnecessários
-            normalizedQuery = normalizedQuery.trim();
-            if (normalizedQuery.startsWith('(') && normalizedQuery.endsWith(')')) {
-                // Verifica se os parênteses cobrem toda a expressão
-                // (Lógica simplificada: remove apenas se for o nível mais externo)
-                normalizedQuery = normalizedQuery.substring(1, normalizedQuery.length - 1).trim();
-            }
-
-            // 4. Divisão Lógica Principal por "OU"
-            // A lógica é: (Grupo A) OU (Grupo B) OU (Grupo C). Se UM deles for verdadeiro, retorna TRUE.
-            // Isso corrige o problema de precedência onde 'A OU B' exigia 'A E B' na versão antiga.
-            const orGroups = normalizedQuery.split(/\s+ou\s+/);
-
-            // Verifica se ALGUM grupo "OU" é satisfeito
-            const matchesAnyGroup = orGroups.some(groupString => {
-                
-                // Dentro de um grupo, a lógica padrão é "E" (AND).
-                // Tokens separados por espaço, 'e' ou ';' devem todos estar presentes (ou ausentes se NEGADOS).
-                
-                // Divide o grupo em tokens, respeitando espaços e ponto-e-vírgula
-                // Removemos ' e ' explicitamente se estiver isolado no split abaixo
-                let tokens = groupString.split(/\s+|;/).filter(t => t && t !== 'e');
-                
-                // Validação de TODOS os termos do grupo (AND Logic)
-                return tokens.every((token, index) => {
-                    let isNegation = false;
-                    let cleanToken = token;
-
-                    // Verifica negação (ex: "-termo" ou "não termo")
-                    // Nota: "não termo" pode ter sido quebrado em ["não", "termo"] pelo split acima.
-                    // Vamos tratar tokens isolados "não" ignorando-os e assumindo que o usuário escreveu "não termo".
-                    // Mas para robustez, verificamos se o token atual começa com '-' ou se o ANTERIOR era 'não'.
-                    
-                    if (cleanToken === 'nao' || cleanToken === 'não') {
-                        return true; // Pula a palavra 'não' isolada, a lógica será aplicada no próximo token
-                    }
-                    
-                    if (cleanToken.startsWith('-')) {
-                        isNegation = true;
-                        cleanToken = cleanToken.substring(1);
-                    } else if (index > 0 && (tokens[index-1] === 'nao' || tokens[index-1] === 'não')) {
-                        isNegation = true;
-                    }
-
-                    // Recupera o texto original se for uma frase entre aspas
-                    if (cleanToken.startsWith('__QUOTED_')) {
-                        const match = cleanToken.match(/__QUOTED_(\d+)__/);
-                        if (match) {
-                            const qIndex = parseInt(match[1]);
-                            cleanToken = quotedTerms[qIndex];
-                        }
-                    }
-
-                    if (!cleanToken) return true;
-
-                    // Executa a verificação (Fuzzy ou Regex padrão)
-                    let matched = false;
-                    if (useFuzzy) {
-                        // Remove curinga (*) para fuzzy, pois fuzzy já é aproximado
-                        matched = fuzzyMatch(normalizedText, cleanToken.replace(/\*/g, ''));
-                    } else {
-                        const regex = createSearchRegex(cleanToken);
-                        matched = regex.test(normalizedText);
-                    }
-
-                    // Se é negação, queremos que matched seja FALSE. Se não é, queremos TRUE.
-                    return isNegation ? !matched : matched;
-                });
-            });
-
-            return matchesAnyGroup;
-        }
-
-        function createSearchRegex(term) {
-            const escapedTerm = term.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
-            if (escapedTerm.includes('*')) {
-                return new RegExp(escapedTerm.replace(/\*/g, '.*'), 'i');
-            } else {
-                return new RegExp(`\\b${escapedTerm}\\b`, 'i');
-            }
-        }
-
-        function fuzzyMatch(text, term) {
-            if (term.length <= 3) return text.includes(term);
-            
-            const termLen = term.length;
-            for (let i = 0; i <= text.length - termLen; i++) {
-                const substring = text.substr(i, termLen);
-                if (calculateSimilarity(substring, term) >= 0.8) return true;
-            }
-            return false;
-        }
-
-        function calculateSimilarity(str1, str2) {
-            const longer = str1.length > str2.length ? str1 : str2;
-            const shorter = str1.length > str2.length ? str2 : str1;
-            if (longer.length === 0) return 1.0;
-            return (longer.length - editDistance(longer, shorter)) / parseFloat(longer.length);
-        }
-
-        function editDistance(str1, str2) {
-            str1 = str1.toLowerCase();
-            str2 = str2.toLowerCase();
-            
-            const costs = [];
-            for (let i = 0; i <= str1.length; i++) {
-                let lastValue = i;
-                for (let j = 0; j <= str2.length; j++) {
-                    if (i === 0) {
-                        costs[j] = j;
-                    } else if (j > 0) {
-                        let newValue = costs[j - 1];
-                        if (str1.charAt(i - 1) !== str2.charAt(j - 1)) {
-                            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-                        }
-                        costs[j - 1] = lastValue;
-                        lastValue = newValue;
-                    }
-                }
-                if (i > 0) costs[str2.length] = lastValue;
-            }
-            return costs[str2.length];
-        }
-
-        // Funções de exibição
-        function displayResults(results) {
-            const allBlocks = document.getElementById('allBlocks');
-            const resultCount = document.getElementById('resultCount');
-            const pagination = document.getElementById('pagination');
-            
-            allBlocks.innerHTML = '';
-            pagination.innerHTML = '';
-            
-            if (results.length === 0) {
-                resultCount.textContent = 'Nenhum resultado encontrado. Tente ajustar os critérios de busca.';
-                resultCount.style.display = 'block';
-                allBlocks.style.display = 'none';
-                pagination.style.display = 'none';
-                return;
-            }
-            
-            const totalPages = Math.ceil(results.length / resultsPerPage);
-            currentPage = Math.min(currentPage, totalPages);
-            
-            const startIndex = (currentPage - 1) * resultsPerPage;
-            const endIndex = Math.min(startIndex + resultsPerPage, results.length);
-            const pageResults = results.slice(startIndex, endIndex);
-            
-            resultCount.textContent = `${results.length} resultado(s) encontrado(s). Exibindo ${startIndex + 1}-${endIndex} de ${results.length}. Página ${currentPage} de ${totalPages}.`;
-            resultCount.style.display = 'block';
-            allBlocks.style.display = 'block';
-            
-            pageResults.forEach((item, index) => {
-                const block = createResultBlock(item, index);
-                allBlocks.appendChild(block);
-            });
-            
-            if (totalPages > 1) {
-                createPagination(totalPages);
-                pagination.style.display = 'flex';
-            } else {
-                pagination.style.display = 'none';
-            }
-        }
-
-     function createResultBlock(item, index) {
-    const block = document.createElement('div');
-    block.className = 'block';
-    
-    // Classes de estilo
-    if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
-    else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
-    else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
-    else block.classList.add('jurisprudencia');
-    
-    let conteudo, referencia;
-    
-    // Mapeamento Abrangente para o Número (incluindo variações de leitura do PapaParse)
-    const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-    let ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; // Texto base
-
-    if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-        // --- CORREÇÃO SIMPLIFICADA PARA EVITAR DUPLICAÇÃO ---
-        
-        const tribunal = getTribunalName(item.dataSource);
-        
-        // 1. Define o prefixo correto que queremos exibir: "Súmula n.º X do TJGO:"
-        const prefixoCorreto = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}:`;
-
-        // 2. Tenta limpar o início do enunciado de origem (ementaOuEnunciado) 
-        //    removendo a parte que provavelmente está duplicada (Ex: 'Súmula n.º 1:')
-        
-        // Remove 'Súmula n.º ' e o número (case insensitive, ignoring accents)
-        let cleanedEnunciado = ementaOuEnunciado.replace(/súmula n\.\º\s*(\d+)/i, '').trim();
-
-        // Se ainda começar com o número ou pontuação, remove:
-        if (cleanedEnunciado.startsWith(numeroProcessoOuSumula)) {
-            cleanedEnunciado = cleanedEnunciado.substring(numeroProcessoOuSumula.length).trim();
-        }
-
-        // Remove dois pontos, hífen ou espaço extra no início
-        while (cleanedEnunciado.startsWith(':') || cleanedEnunciado.startsWith('-') || cleanedEnunciado.startsWith(' ')) {
-            cleanedEnunciado = cleanedEnunciado.substring(1).trim();
-        }
-
-        // 3. Junta o prefixo corrigido com o conteúdo limpo.
-        conteudo = `${prefixoCorreto} ${cleanedEnunciado}`;
-        
-        // --- FIM DA CORREÇÃO ---
-        
-        referencia = ''; // Remove a data de publicação na exibição de Súmulas.
-        
+  // Conta N dias úteis; aplica prorrogação se final cair em QF (não pode finalizar)
+  function addBusinessDays(start, n, firstDayNote=null){
+    let cur = new Date(start);
+    let count = 0;
+    const counted = new Map(); // ymd -> obs array
+    while(count < n){
+      cur = addDays(cur, 1);
+      if(isBusinessDay(cur, 'counting')){
+        count++;
+        const obs = [`Dia útil de contagem #${count}`];
+        if(count === 1 && firstDayNote){ obs[0] += ` (${firstDayNote})`; }
+        if(count === n){ obs.push('Data teórica final do prazo'); }
+        counted.set(ymd(cur), obs);
+      }
+    }
+    // Se final cair em QF (start_end), prorroga para próximo útil
+    if(isAshWednesday(cur)){
+      const key = ymd(cur);
+      if(counted.has(key)) counted.get(key).push('QF — não finaliza; prorrogado');
+      let bump = nextBusinessDay(addDays(cur,1), 'start_end');
+      counted.set(ymd(bump), ['Prorrogação da final por QF → Data final']);
+      cur = bump;
     } else {
-        // FORMATO JURISPRUDÊNCIA (Base '0')
-        const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-        
-        conteudo = ementaOuEnunciado;
-        // Referência completa, incluindo Publicação
-        referencia = `(TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+      const key = ymd(cur);
+      if(counted.has(key)) counted.get(key).push('Data final do prazo');
+      else counted.set(key, ['Data final do prazo']);
     }
-    
-    // Aplicação do destaque e montagem do bloco de resultados
-    const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
-    const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
-    
-    // Insere o span de referência apenas se houver conteúdo em 'referencia'
-    const refHtml = referencia ? `<span class="referencia">${referenciaComDestaque}</span>` : '';
+    return {end: cur, counted};
+  }
 
-    block.innerHTML = `
-        <button class="copy-btn" onclick="copyToClipboard(event, ${index})" title="Copiar">📋</button>
-        <div class="ementa-content">
-            ${conteudoComDestaque} ${refHtml}
-        </div>
-    `;
-    
-    return block;
-}
-       function copyToClipboard(event, index) {
-    const actualIndex = (currentPage - 1) * resultsPerPage + index;
-    const item = filteredData[actualIndex];
-    
-    if (!item) {
-        showAlert('Erro ao copiar: item não encontrado.', 'error');
-        return;
+  // ---------- Regras específicas para publicação (D1/D2) ----------
+  function isRecessDay(d){
+    const h = holidayInfo(d);
+    return !!(h && h.name.toLowerCase().includes('recesso'));
+  }
+
+  // Mapa de observações de publicação (datas → array de anotações)
+  function pushNote(map, d, txt){
+    const k = ymd(d);
+    if(!map.has(k)) map.set(k, []);
+    map.get(k).push(txt);
+  }
+
+  // Próximo dia de publicação a partir do dia anterior (marco ou D1)
+  // Regra híbrida: aceita dia útil normal OU dia útil de recesso; rejeita FDS e feriado não-recesso
+  function nextPublicationFrom(prevDate, pubIndex, pubLog){
+    let d = addDays(prevDate, 1);
+    while(true){
+      const wknd = isWeekend(d);
+      const h = holidayInfo(d);
+      const rec = isRecessDay(d);
+
+      // Sábado/Domingo sempre rejeitados para publicação (mesmo se dentro do recesso)
+      if(wknd){
+        // Observação jurídica padronizada
+        pushNote(pubLog, d, 'ato de publicação não se realiza em finais de semana.');
+        d = addDays(d, 1);
+        continue;
+      }
+
+      // Feriado não-recesso rejeitado
+      if(h && !rec && !isAshWednesday(d)){
+        pushNote(pubLog, d, `ato de publicação não se realiza em feriados — ${h.name}.`);
+        d = addDays(d, 1);
+        continue;
+      }
+
+      // Se chegou aqui: dia útil normal OU dia útil de recesso OU QF (tratada abaixo)
+      // Observações de aceitação: registrar Publicação Dn
+      pushNote(pubLog, d, `Publicação D${pubIndex} (${pubIndex===1 ? '1º' : '2º'} dia útil após expedição)`);
+      return d;
     }
-    
-    let textToCopy;
+  }
 
-    // Mapeamento Abrangente para o Número (copia)
-    const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-    let ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; // Texto base
-    
-    if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-        // --- CORREÇÃO SIMPLIFICADA PARA EVITAR DUPLICAÇÃO NA CÓPIA ---
-        
-        const tribunal = getTribunalName(item.dataSource);
-        const prefixoCorreto = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}:`;
+  // ---------- Função principal de cálculo ----------
+  function calcularPrazo(isMobile = false) {
+    const prefix = isMobile ? '-mobile' : '-desktop';
+    const tipo = document.getElementById(`tipo${prefix}`).value;
+    const sData = document.getElementById(`dataBase${prefix}`).value;
+    const nDias = parseInt(document.getElementById(`dias${prefix}`).value, 10);
+    if(!sData || isNaN(nDias) || nDias<=0){
+      alert('Informe a Data Inicial e um número válido de dias.');
+      return;
+    }
 
-        // 1. Tenta limpar o início do enunciado de origem (ementaOuEnunciado) 
-        //    removendo a parte que provavelmente está duplicada (Ex: 'Súmula n.º 1:')
-        
-        // Remove 'Súmula n.º ' e o número (case insensitive, ignoring accents)
-        let cleanedEnunciado = ementaOuEnunciado.replace(/súmula n\.\º\s*(\d+)/i, '').trim();
+    const marco = parseISO(sData);
+    let D1=null, D2=null, inicioContagem=null, firstNote=null;
 
-        // Se ainda começar com o número ou pontuação, remove:
-        if (cleanedEnunciado.startsWith(numeroProcessoOuSumula)) {
-            cleanedEnunciado = cleanedEnunciado.substring(numeroProcessoOuSumula.length).trim();
-        }
+    // PUB_NOTES guarda candidaturas rejeitadas/aceitas para auditoria
+    const PUB_NOTES = new Map();
 
-        // Remove dois pontos, hífen ou espaço extra no início
-        while (cleanedEnunciado.startsWith(':') || cleanedEnunciado.startsWith('-') || cleanedEnunciado.startsWith(' ')) {
-            cleanedEnunciado = cleanedEnunciado.substring(1).trim();
-        }
-
-        // 2. Junta o prefixo corrigido com o conteúdo limpo.
-        textToCopy = `${prefixoCorreto} ${cleanedEnunciado}`;
-        
-        // --- FIM DA CORREÇÃO NA CÓPIA ---
-        
+    if(tipo === 'leitura'){
+      inicioContagem = nextBusinessDay(addDays(marco,1), 'start_end');
+      firstNote = '1º dia útil após leitura';
     } else {
-        // FORMATO JURISPRUDÊNCIA: Mantém o padrão
-        const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-        textToCopy = `${ementaOuEnunciado} (TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+      // Regras híbridas para D1/D2 com auditoria de candidatos rejeitados
+      D1 = nextPublicationFrom(marco, 1, PUB_NOTES);
+      D2 = nextPublicationFrom(D1,    2, PUB_NOTES);
+
+      // Início da contagem: 1º dia útil após D2 (respeitando recesso, feriados, QF)
+      inicioContagem = nextBusinessDay(addDays(D2,1), 'start_end');
+      firstNote = 'dia útil subsequente à publicação D2';
     }
-    
-    // Usa a API de Clipboard moderna, se disponível
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            const btn = event.currentTarget;
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '✓';
-            btn.classList.add('copied');
-            
-            setTimeout(() => {
-                btn.innerHTML = originalHTML;
-                btn.classList.remove('copied');
-            }, 2000);
-            
-            showAlert('Conteúdo copiado para a área de transferência!', 'success');
-        }).catch(err => {
-            // Se o navigator.clipboard falhar (permissões negadas), tentamos o fallback
-            performFallbackCopy(event, textToCopy);
-        });
-    } else {
-        // Fallback direto para navegadores sem navigator.clipboard
-        performFallbackCopy(event, textToCopy);
+
+    const {end: dataFinal, counted} = addBusinessDays(addDays(inicioContagem,-1), nDias, firstNote);
+
+    // --- Montar auditoria contínua ---
+    const tbody = document.querySelector(`#tabela${prefix} tbody`);
+    tbody.innerHTML = '';
+    let idx = 0;
+
+    let cursor = new Date(marco);
+    const endInclusive = new Date(dataFinal);
+
+    while(cursor <= endInclusive){
+      idx++;
+      const key = ymd(cursor);
+      const isMarco = (key === ymd(marco));
+      let mode = (cursor < inicioContagem) ? 'start_end' : 'counting';
+
+      const base = classifyDay(cursor, mode, isMobile);
+      const obsParts = [];
+
+      // Observação base para não útil (prioridade)
+      if(base.tag === 'Não útil'){
+        let reason = reasonNonUseful(cursor, mode);
+        if(isMarco){
+          const marcoTxt = (tipo==='leitura')?'Dia da leitura':'Dia da expedição';
+          const isRecesso = (reason.toLowerCase().includes('recesso'));
+          if(isRecesso){
+            reason = 'Recesso forense — ' + marcoTxt;
+            obsParts.push(reason);
+          } else {
+            obsParts.push(marcoTxt);
+          }
+        } else {
+          obsParts.push(reason);
+        }
+      }
+
+      // D1 / D2 (publicação): notas detalhadas (inclui candidatos rejeitados)
+      if(PUB_NOTES && PUB_NOTES.has(key)){
+        obsParts.push(...PUB_NOTES.get(key));
+      }
+
+      // Dias úteis contados
+      if(counted.has(key)){
+        base.tag = 'Útil'; base.badge='ok';
+        obsParts.push(...counted.get(key));
+      }else{
+        //
+      }
+
+      // Render
+      const tr = document.createElement('tr');
+      const tdIdx = document.createElement('td'); tdIdx.textContent = idx;
+      const tdData = document.createElement('td'); tdData.textContent = fmtBR(base.date);
+      const tdDow  = document.createElement('td'); tdDow.textContent = base.dow;
+
+      // badge: ok | warn | recesso | info
+      const tdTag  = document.createElement('td'); tdTag.innerHTML = `<span class="tag ${base.badge}">${base.tag}</span>`;
+      const tdObs  = document.createElement('td'); tdObs.textContent = obsParts.join(' • ');
+      tr.append(tdIdx, tdData, tdDow, tdTag, tdObs);
+
+      if(key === ymd(dataFinal)) tr.style.outline = '2px solid var(--bad)';
+      tbody.appendChild(tr);
+
+      cursor = addDays(cursor,1);
     }
-}
 
-    function performFallbackCopy(event, textToCopy) {
-        const btn = event.currentTarget;
-        const originalHTML = btn.innerHTML;
-        const textArea = document.createElement('textarea');
-        
-        textArea.value = textToCopy;
-        textArea.style.position = 'fixed'; 
-        textArea.style.top = '0';
-        textArea.style.left = '0';
-        textArea.style.opacity = '0'; // Deixa o textarea invisível
-        document.body.appendChild(textArea);
-        
-        try {
-            // Tenta focar e selecionar
-            textArea.focus();
-            textArea.select();
-            
-            // Se conseguir copiar
-            const successful = document.execCommand('copy');
-            if (successful) {
-                btn.innerHTML = '✓';
-                btn.classList.add('copied');
-                
-                setTimeout(() => {
-                    btn.innerHTML = originalHTML;
-                    btn.classList.remove('copied');
-                }, 2000);
-                
-                showAlert('Conteúdo copiado para a área de transferência!', 'success');
-            } else {
-                showAlert('Erro ao copiar: O navegador bloqueou o acesso à área de transferência.', 'error');
-            }
-        } catch (err) {
-            console.error('Erro de fallback ao copiar: ', err);
-            showAlert('Erro ao copiar para a área de transferência (Falha no Fallback).', 'error');
-        } finally {
-            document.body.removeChild(textArea);
-        }
+    document.getElementById(`finalDate${prefix}`).innerHTML =
+      `Prazo de <span class="code">${nDias}</span> dias úteis — <strong>data final:</strong> <span class="danger">${fmtBR(dataFinal)}</span>`;
+    document.getElementById(`resultado${prefix}`).style.display = 'block';
+
+    // Copiar resumo / CSV
+    document.getElementById(`btnCopiar${prefix}`).onclick = ()=>{
+      const resumo = [
+        `Tipo: ${tipo === 'leitura' ? 'Leitura' : 'Expedição'}`,
+        `Data Inicial: ${fmtBR(marco)}`,
+        `Dias de prazo: ${nDias}`,
+        `Data final: ${fmtBR(dataFinal)}`
+      ].join('\n');
+      navigator.clipboard.writeText(resumo).then(()=> alert('Resumo copiado.'));
+    };
+
+    document.getElementById(`btnCSV${prefix}`).onclick = ()=>{
+      const linhas = [["#", "Data", "Dia da semana", "Classificação", "Observação"]];
+      const trs = document.querySelectorAll(`#tabela${prefix} tbody tr`);
+      trs.forEach(tr=>{
+        const tds = tr.querySelectorAll('td');
+        const cols = [tds[0].textContent, tds[1].textContent, tds[2].textContent, tds[3].innerText, tds[4].textContent];
+        linhas.push(cols);
+      });
+      const csv = linhas.map(cols=> cols.map(col=> `"${String(col).replaceAll('"','""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'auditoria_prazo.csv';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    };
+  }
+
+  // ---------- Inicialização ----------
+  
+  // Desktop
+  document.querySelectorAll('.desktop-layout .chip').forEach(ch => {
+    ch.addEventListener('click', ()=>{
+      document.getElementById('dias-desktop').value = ch.dataset.d;
+    });
+  });
+
+  document.getElementById('btnCalcular-desktop').addEventListener('click', ()=>{
+    calcularPrazo(false);
+  });
+
+  // Mobile
+  document.querySelectorAll('.mobile-layout .mobile-chip').forEach(ch => {
+    ch.addEventListener('click', ()=>{
+      document.getElementById('dias-mobile').value = ch.dataset.d;
+    });
+  });
+
+  document.getElementById('btnCalcular-mobile').addEventListener('click', ()=>{
+    calcularPrazo(true);
+  });
+
+  // Menu móvel - funcionalidades
+  document.getElementById('mobileCalc').addEventListener('click', ()=>{
+    calcularPrazo(true);
+  });
+  document.getElementById('mobileCopy').addEventListener('click', ()=>{
+    document.getElementById('btnCopiar-mobile').click();
+  });
+  document.getElementById('mobileExport').addEventListener('click', ()=>{
+    document.getElementById('btnCSV-mobile').click();
+  });
+
+  // Modal para informações legais
+  document.getElementById('toggleLegal').addEventListener('click', ()=>{
+    document.getElementById('legalModal').style.display = 'flex';
+  });
+  document.getElementById('closeModal').addEventListener('click', ()=>{
+    document.getElementById('legalModal').style.display = 'none';
+  });
+  document.getElementById('legalModal').addEventListener('click', (e)=>{
+    if(e.target === document.getElementById('legalModal')){
+      document.getElementById('legalModal').style.display = 'none';
     }
-        
-        function getTribunalName(dataSource) {
-            const tribunais = {
-                '2110972132': 'TJGO',
-                '1277187400': 'STJ', 
-                '503544784': 'STF',
-                '0': 'TJGO'
-            };
-            return tribunais[dataSource] || 'TRIBUNAL';
-        }
+  });
 
-        function extractSearchTerms(query) {
-            if (!query?.trim()) return [];
-            
-            const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            const quotedTerms = [];
-            
-            let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
-                if (p1) quotedTerms.push(p1);
-                return ' ';
-            });
+  // Clock (apenas desktop)
+  function updateClock(){
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const ss = String(now.getSeconds()).padStart(2,'0');
+    const el = document.getElementById('clock');
+    if(el) el.textContent = `${hh}:${mm}:${ss}`;
+  }
+  updateClock();
+  setInterval(updateClock,1000);
 
-            const individualTerms = processedQuery
-                .split(/\s+/)
-                .filter(term => term.length > 2 && !['e', 'ou', 'não', ';'].includes(term) && !term.startsWith('-'));
-
-            return [...new Set([...quotedTerms, ...individualTerms])];
-        }
-
-        function createAccentInsensitiveRegexString(text) {
-            return text.replace(/a/g, '[aáàâã]')
-                        .replace(/e/g, '[eéèêë]')
-                        .replace(/i/g, '[iíìîî]')
-                        .replace(/o/g, '[oóòôõö]')
-                        .replace(/u/g, '[uúùûü]')
-                        .replace(/c/g, '[cç]')
-                        .replace(/\*/g, '.*'); 
-        }
-
-        function highlightText(text, searchTerms) {
-            if (!searchTerms || !text) return text;
-
-            const terms = extractSearchTerms(searchTerms);
-            if (terms.length === 0) return text;
-
-            terms.sort((a, b) => b.length - a.length);
-
-            const accentInsensitiveTerms = terms.map(term => {
-                const escapedTerm = escapeRegex(term);
-                return createAccentInsensitiveRegexString(escapedTerm);
-            });
-
-            const regex = new RegExp(`(${accentInsensitiveTerms.join('|')})`, 'gi');
-            return text.replace(regex, '<span class="highlight">$&</span>');
-        }
-
-        function escapeRegex(string) {
-            return string.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '*');
-        }
-
-        function createPagination(totalPages) {
-            const pagination = document.getElementById('pagination');
-            pagination.innerHTML = '';
-            
-            const prevButton = document.createElement('button');
-            prevButton.innerHTML = '‹';
-            prevButton.disabled = currentPage === 1;
-            prevButton.onclick = () => changePage(currentPage - 1);
-            pagination.appendChild(prevButton);
-            
-            const startPage = Math.max(1, currentPage - 2);
-            const endPage = Math.min(totalPages, startPage + 4);
-            
-            for (let i = startPage; i <= endPage; i++) {
-                const pageButton = document.createElement('button');
-                pageButton.textContent = i;
-                pageButton.className = i === currentPage ? 'active' : '';
-                pageButton.onclick = () => changePage(i);
-                pagination.appendChild(pageButton);
-            }
-            
-            const nextButton = document.createElement('button');
-            nextButton.innerHTML = '›';
-            nextButton.disabled = currentPage === totalPages;
-            nextButton.onclick = () => changePage(currentPage + 1);
-            pagination.appendChild(nextButton);
-        }
-
-        function changePage(newPage) {
-            currentPage = newPage;
-            displayResults(filteredData);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    </script>
+  // Melhorar a experiência em dispositivos móveis
+  // Definir data padrão como hoje
+  const today = new Date();
+  const todayFormatted = today.toISOString().split('T')[0];
+  document.getElementById('dataBase-desktop').value = todayFormatted;
+  document.getElementById('dataBase-mobile').value = todayFormatted;
+  
+  // Melhorar a usabilidade do input de data em mobile
+  document.getElementById('dataBase-mobile').addEventListener('focus', function() {
+    this.type = 'date';
+  });
+</script>
+  
 </body>
 </html>
