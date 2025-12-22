@@ -145,88 +145,129 @@
             margin-right: auto;
         }
 
-        /* Search */
-        .search-bar {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin: 10px auto;
-            padding: 0 10px;
+        /* NOVA ESTRUTURA DA BARRA DE PESQUISA PRINCIPAL */
+        .search-main-container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 15px;
         }
-
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 0;
-        }
-
-        .search-bar input,
-        .search-bar select {
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 200px;
-            max-width: 100%;
+        
+        .main-search-field {
+            width: 100%;
+            padding: 22px 25px;
+            font-size: 1.4rem;
+            border: 3px solid var(--primary-color);
+            border-radius: 10px;
             background: var(--white);
             color: var(--text-color);
-            font-size: 16px;
-            transition: border-color 0.3s;
+            box-shadow: 0 5px 15px rgba(47, 64, 80, 0.15);
+            transition: all 0.3s ease;
+            margin-bottom: 25px;
+            display: block;
         }
-
-        .search-bar input:focus,
-        .search-bar select:focus {
-            border-color: var(--primary-color);
+        
+        .main-search-field:focus {
             outline: none;
-            box-shadow: 0 0 0 2px rgba(47, 64, 80, 0.2);
+            border-color: var(--secondary-color);
+            box-shadow: 0 8px 25px rgba(47, 64, 80, 0.25);
+            transform: translateY(-2px);
         }
-
-        .search-bar select:disabled {
-            background-color: #f0f0f0;
-            cursor: not-allowed;
-            color: #888;
+        
+        .main-search-field::placeholder {
+            color: #777;
+            font-size: 1.2rem;
         }
-
-        .button-container {
+        
+        .filters-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 20px auto;
+            max-width: 1000px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid #dee2e6;
+        }
+        
+        .filters-row {
             display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
             justify-content: center;
+            align-items: flex-end;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 180px;
+            flex: 1;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .filter-group input,
+        .filter-group select {
+            padding: 14px;
+            border: 2px solid #ced4da;
+            border-radius: 6px;
+            font-size: 1rem;
+            background: var(--white);
+            transition: border-color 0.3s;
             width: 100%;
         }
-
-        .search-bar button {
-            padding: 14px 30px;
+        
+        .filter-group input:focus,
+        .filter-group select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(47, 64, 80, 0.1);
+        }
+        
+        .search-button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .search-button-container button {
+            padding: 16px 40px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: var(--white);
             font-weight: bold;
             cursor: pointer;
-            min-width: 120px;
-            font-size: 16px;
+            min-width: 180px;
+            font-size: 1.1rem;
             transition: all 0.3s ease;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
-        .search-bar button:hover {
+        
+        .search-button-container button:hover {
             background: linear-gradient(135deg, var(--secondary-color), #4a6572);
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
-
-        .search-bar button:active {
+        
+        .search-button-container button:active {
             transform: translateY(0);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        .search-bar button:disabled {
+        
+        .search-button-container button:disabled {
             background: #cccccc;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
-
+        
         .opts {
             display: flex;
             align-items: center;
@@ -235,6 +276,7 @@
             font-size: .9rem;
             justify-content: center;
             flex-wrap: wrap;
+            margin-top: 15px;
         }
 
         /* Resultados */
@@ -494,29 +536,31 @@
                 padding: 0 15px;
             }
 
-            .search-bar {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .form-row {
-                flex-direction: column;
-                align-items: center;
+            .main-search-field {
+                font-size: 1.2rem;
+                padding: 18px 15px;
+                margin-bottom: 20px;
             }
             
-            .form-row input,
-            .form-row select {
+            .filters-container {
+                padding: 20px;
+            }
+            
+            .filters-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .filter-group {
                 width: 100%;
                 max-width: 300px;
+                margin: 0 auto;
             }
-
-            .search-bar button {
+            
+            .search-button-container button {
                 width: 100%;
                 max-width: 300px;
-            }
-
-            .opts {
-                justify-content: center;
+                padding: 14px 20px;
             }
 
             .block {
@@ -543,12 +587,20 @@
                 padding: 70px 0 15px 0;
             }
 
-            .search-bar input,
-            .search-bar select {
+            .main-search-field {
+                font-size: 1.1rem;
+                padding: 16px 12px;
+            }
+            
+            .filters-container {
+                padding: 15px;
+            }
+            
+            .filter-group {
                 max-width: 100%;
             }
-
-            .search-bar button {
+            
+            .search-button-container button {
                 max-width: 100%;
             }
 
@@ -590,27 +642,49 @@
             <strong>*</strong> como curinga. Parênteses são aceitos. Acentos são ignorados.
         </p>
 
-        <div class="search-bar">
-            <div class="form-row">
-                <input type="text" id="terms" placeholder='Ex.: "dano moral" E responsabilidade OU contrato*'>
-                <input type="date" id="startDate">
-                <input type="date" id="endDate">
-                <select id="dataSource">
-                    <option value="">Todas as Bases</option>
-                    <option value="0">Jurisprudência</option>
-                    <option value="2110972132">Súmulas do TJGO</option>
-                    <option value="1277187400">Súmulas do STJ</option>
-                    <option value="503544784">Súmulas do STF</option>
-                </select>
-                <select id="relator">
-                    <option value="">Relator (todos)</option>
-                </select>
-                <div class="opts">
-                    <label><input type="checkbox" id="fuzzy"> Busca aproximada</label>
+        <!-- NOVA ESTRUTURA DA BARRA DE PESQUISA PRINCIPAL -->
+        <div class="search-main-container">
+            <input type="text" id="terms" class="main-search-field" 
+                   placeholder='Digite aqui os termos da pesquisa. Exemplo: "dano moral" E responsabilidade OU contrato*'>
+            
+            <div class="filters-container">
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <label for="startDate">Data Inicial</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="endDate">Data Final</label>
+                        <input type="date" id="endDate">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="dataSource">Base de Dados</label>
+                        <select id="dataSource">
+                            <option value="">Todas as Bases</option>
+                            <option value="0">Jurisprudência</option>
+                            <option value="2110972132">Súmulas do TJGO</option>
+                            <option value="1277187400">Súmulas do STJ</option>
+                            <option value="503544784">Súmulas do STF</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="relator">Relator</label>
+                        <select id="relator">
+                            <option value="">Todos os Relatores</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-            <div class="button-container">
-                <button id="searchButton" onclick="performSearch()">Consultar</button>
+                
+                <div class="opts">
+                    <label><input type="checkbox" id="fuzzy"> Busca aproximada (aceita pequenas variações nas palavras)</label>
+                </div>
+                
+                <div class="search-button-container">
+                    <button id="searchButton" onclick="performSearch()">Consultar</button>
+                </div>
             </div>
         </div>
 
@@ -635,7 +709,7 @@
         <div id="pagination" class="pagination"></div>
     </div>
     
-    <div id="version-tag">v.3.4 (Fix Logic)</div>
+    <div id="version-tag">v.3.5 (UI Melhorada)</div>
 
     <script>
         // Variáveis globais
