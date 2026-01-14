@@ -101,14 +101,22 @@
       font-weight:600;
     }
     
-    input[type="date"], select, input[type="number"]{
+    /* Melhora de Acessibilidade: Foco visível */
+    input:focus, select:focus, button:focus {
+      outline: 2px solid var(--graphite);
+      outline-offset: 1px;
+      border-color: var(--graphite);
+    }
+
+    /* Correção: O seletor abaixo estava faltando no seu código */
+    input[type="date"], select, input[type="number"] {
       width:100%; 
       padding:11px 13px; 
       border:1px solid #e5e1db; 
       border-radius:10px; 
       font-size:.95rem;
       background:#fff; 
-      outline:none;
+      /* outline:none; -> Removido para permitir navegação visual */
     }
 
     /* Ações */
@@ -290,10 +298,8 @@
 <body>
 
 <div class="container">
-  <!-- Título -->
   <h1 class="title">Contador de Prazos Cíveis — TJGO</h1>
 
-  <!-- Informações legais colapsáveis -->
   <div class="legal-info">
     <div class="legal-toggle" id="legalToggle">
       Regras de Contagem
@@ -306,7 +312,6 @@
     </div>
   </div>
 
-  <!-- Formulário -->
   <section class="card">
     <div class="grid">
       <div class="field">
@@ -338,7 +343,6 @@
     </div>
     <p class="muted">Feriados TJGO (2023–2026), recesso, fins de semana e Quarta-feira de Cinzas com regra especial já aplicados.</p>
 
-    <!-- Resultado -->
     <div class="result" id="resultado" style="display:none">
       <div class="final-date" id="finalDate"></div>
       <div class="actions">
@@ -470,9 +474,23 @@
   add("Ano Novo (Feriado Nacional)", ["2026-01-01"]);
   add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2026-02-16","2026-02-17"]);
   add("Quarta-feira de Cinzas (regra especial)", ["2026-02-18"], {ash:true});
-  add("Semana Santa — Feriado no Tribunal", ["2026-04-03","2026-04-04","2026-04-05"]);
+  add("Semana Santa — Feriado no Tribunal", ["2026-04-01","2026-04-02","2026-04-03"]);
+  add("Ponto Facultativo (ponte Tiradentes)", ["2026-04-20"]);
   add("Tiradentes (Feriado Nacional)", ["2026-04-21"]);
   add("Dia do Trabalho (Feriado Nacional)", ["2026-05-01"]);
+  add("Nossa Senhora Auxiliadora (Feriado Municipal: TJ/Comarcas específicas)", ["2026-05-24"]);
+  add("Corpus Christi (Feriado Nacional)", ["2026-06-04"]);
+  add("Ponto Facultativo (ponte Corpus Christi)", ["2026-06-05"]);
+  add("Fundação da Cidade de Goiás (Feriado no Tribunal)", ["2026-07-26"]);
+  add("Independência do Brasil (Feriado Nacional)", ["2026-09-07"]);
+  add("Nossa Senhora Aparecida (Feriado Nacional)", ["2026-10-12"]);
+  add("Aniversário de Goiânia (Feriado no Tribunal e em todas as comarcas)", ["2026-10-24"]);
+  add("Dia do Servidor Público (Feriado Estadual)", ["2026-10-28"]);
+  add("Finados (Feriado Nacional)", ["2026-11-02"]);
+  add("Proclamação da República (Feriado Nacional)", ["2026-11-15"]);
+  add("Dia da Consciência Negra (Feriado Nacional)", ["2026-11-20"]);
+  add("Dia da Justiça (Feriado — Art. 123 RITJGO)", ["2026-12-08"]);
+  add("Natal (Feriado Nacional)", ["2026-12-25"]);
   addRange("Recesso Forense", "2026-12-20", "2027-01-20");
 
   // ---------- Helpers ----------
@@ -725,23 +743,60 @@
 
   // ---------- Inicialização ----------
   
-  // Chips de atalho
+  // 1. Chips de atalho (botões de 5, 15, 30 dias)
   document.querySelectorAll('.chip').forEach(ch => {
     ch.addEventListener('click', ()=>{
       document.getElementById('dias').value = ch.dataset.d;
+      // Opcional: focar no botão calcular após escolher o chip
+      document.getElementById('btnCalcular').focus(); 
     });
   });
 
-  // Botão calcular
+  // 2. Botão calcular (Clique do Mouse)
   document.getElementById('btnCalcular').addEventListener('click', calcularPrazo);
 
-  // Toggle informações legais
+  // 3. Navegação via Teclado (Tecla Enter em qualquer campo dispara o cálculo)
+  const inputsNavegaveis = ['dataBase', 'dias', 'tipo'];
+  inputsNavegaveis.forEach(id => {
+    document.getElementById(id).addEventListener('keypress', function(e){
+      if(e.key === 'Enter'){
+        e.preventDefault(); 
+        document.getElementById('btnCalcular').click();
+      }
+    });
+  });
+
+  // 4. Correção para COLAR data (Paste)
+  // O campo date padrão exige yyyy-mm-dd. Se o usuário colar dd/mm/yyyy, convertemos.
+  const inputData = document.getElementById('dataBase');
+  inputData.addEventListener('paste', function(e) {
+    // Tenta pegar o texto colado
+    const paste = (e.clipboardData || window.clipboardData).getData('text');
+    
+    // Expressão regular para identificar formato BR (dd/mm/aaaa ou dd-mm-aaaa)
+    // Aceita separadores / ou -
+    const regexBR = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
+    
+    if (regexBR.test(paste)) {
+      e.preventDefault(); // Impede o comportamento padrão (que falharia)
+      
+      // Converte para o formato ISO (yyyy-mm-dd)
+      const partes = paste.split(/[\/\-]/); // Quebra em dia, mes, ano
+      const dia = partes[0].padStart(2, '0');
+      const mes = partes[1].padStart(2, '0');
+      const ano = partes[2];
+      
+      this.value = `${ano}-${mes}-${dia}`;
+    }
+  });
+
+  // 5. Toggle informações legais
   document.getElementById('legalToggle').addEventListener('click', function(){
     this.classList.toggle('open');
     document.getElementById('legalContent').classList.toggle('show');
   });
 
-  // Data padrão: hoje
+  // 6. Data padrão: hoje
   const today = new Date();
   const todayFormatted = today.toISOString().split('T')[0];
   document.getElementById('dataBase').value = todayFormatted;
