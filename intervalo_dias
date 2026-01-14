@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculadora de Intervalo de Dias — TJGO</title>
+  <style>
+    :root{
+      --paper:#f8f6f2; --paper-3:#eee9e1; --card:#ffffff;
+      --ink:#2b2b2b; --sepia:#7a6f61; --graphite:#3a3a3a;
+      --line:#e3ded6; --line-2:#d8d1c4;
+      --useful:#4d6b4d; --holiday:#7a6f61; --recess:#6a1f1f;
+      --row:#fbf9f5; --row2:#f5f1ea; --hl:#f1ede5;
+    }
+
+    *{box-sizing:border-box; margin:0; padding:0;}
+    html,body{height:100%; overflow-x:hidden;}
+    body{
+      background:var(--paper); color:var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      padding:16px 16px 24px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+    }
+
+    .container {
+      max-width:600px;
+      width:100%;
+      margin:0 auto;
+    }
+
+    .title {
+      font-size:1.5rem;
+      font-weight:800;
+      color:var(--graphite);
+      margin-bottom:8px;
+      text-align:center;
+    }
+
+    .subtitle {
+      text-align:center;
+      color:var(--sepia);
+      font-size:.9rem;
+      margin-bottom:20px;
+    }
+
+    .card{
+      background:var(--card); 
+      border-radius:16px; 
+      border:1px solid var(--line);
+      box-shadow:0 4px 12px rgba(2,12,27,.06); 
+      padding:24px;
+    }
+
+    .field{
+      display:flex; 
+      flex-direction:column; 
+      gap:6px;
+      margin-bottom:16px;
+    }
+    
+    label{
+      font-size:.9rem; 
+      color:#4a4743; 
+      font-weight:600;
+    }
+    
+    input:focus, button:focus {
+      outline: 2px solid var(--graphite);
+      outline-offset: 1px;
+      border-color: var(--graphite);
+    }
+
+    input[type="date"] {
+      width:100%; 
+      padding:11px 13px; 
+      border:1px solid #e5e1db; 
+      border-radius:10px; 
+      font-size:.95rem;
+      background:#fff;
+    }
+
+    .tipo-container {
+      margin-bottom:20px;
+    }
+
+    .tipo-label {
+      font-size:.9rem;
+      color:#4a4743;
+      font-weight:600;
+      margin-bottom:10px;
+      display:block;
+    }
+
+    .tipo-buttons {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .tipo-btn {
+      padding:12px 16px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:700;
+      border:2px solid #d6d0c7;
+      background:transparent;
+      color:var(--ink);
+      font-size:.9rem;
+      transition:all .2s;
+      text-align:center;
+    }
+
+    .tipo-btn:hover {
+      background:var(--paper-3);
+      transform:translateY(-1px);
+    }
+
+    .tipo-btn.active {
+      background:var(--graphite);
+      color:#fff;
+      border-color:var(--graphite);
+    }
+
+    .btn{
+      width:100%;
+      padding:13px 16px; 
+      border-radius:10px; 
+      cursor:pointer; 
+      font-weight:700;
+      border:1px solid transparent; 
+      letter-spacing:.3px;
+      font-size:.95rem;
+      transition:all .2s;
+      background:var(--graphite); 
+      color:#fff;
+    }
+
+    .btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 4px 12px rgba(0,0,0,.2);
+    }
+
+    .btn:active {
+      transform:translateY(0);
+    }
+
+    .result {
+      margin-top:24px;
+      padding:20px;
+      background:var(--hl);
+      border:2px dashed var(--line-2);
+      border-radius:12px;
+      text-align:center;
+      display:none;
+    }
+
+    .result.show {
+      display:block;
+      animation:fadeIn .3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {opacity:0; transform:translateY(-10px)}
+      to {opacity:1; transform:translateY(0)}
+    }
+
+    .result-label {
+      font-size:.85rem;
+      color:var(--sepia);
+      margin-bottom:8px;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      font-weight:600;
+    }
+
+    .result-value {
+      font-size:3.5rem;
+      font-weight:900;
+      color:var(--graphite);
+      line-height:1;
+      margin-bottom:6px;
+    }
+
+    .result-type {
+      font-size:.9rem;
+      color:var(--sepia);
+      font-weight:600;
+    }
+
+    .result-details {
+      margin-top:16px;
+      padding-top:16px;
+      border-top:1px solid var(--line-2);
+      font-size:.85rem;
+      color:var(--sepia);
+      line-height:1.6;
+    }
+
+    .actions-bottom {
+      margin-top:16px;
+      display:flex;
+      gap:8px;
+    }
+
+    .btn-secondary {
+      flex:1;
+      padding:10px 14px;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:600;
+      border:1px solid #d6d0c7;
+      background:transparent;
+      color:var(--ink);
+      font-size:.85rem;
+      transition:all .2s;
+    }
+
+    .btn-secondary:hover {
+      background:var(--paper-3);
+      transform:translateY(-1px);
+    }
+
+    .muted {
+      color:#7a6f61;
+      font-size:.82rem;
+      margin-top:12px;
+      text-align:center;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding:12px;
+        align-items:flex-start;
+      }
+      .title {
+        font-size:1.3rem;
+      }
+      .result-value {
+        font-size:2.8rem;
+      }
+      .tipo-buttons {
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1 class="title">Calculadora de Intervalo de Dias</h1>
+  <p class="subtitle">Conte dias corridos ou dias úteis entre duas datas</p>
+
+  <section class="card">
+    <div class="field">
+      <label for="dataInicial">Data Inicial</label>
+      <input type="date" id="dataInicial" />
+    </div>
+
+    <div class="field">
+      <label for="dataFinal">Data Final</label>
+      <input type="date" id="dataFinal" />
+    </div>
+
+    <div class="tipo-container">
+      <span class="tipo-label">Tipo de Contagem</span>
+      <div class="tipo-buttons">
+        <button class="tipo-btn active" data-tipo="corridos">📅 Dias Corridos</button>
+        <button class="tipo-btn" data-tipo="uteis">⚖️ Dias Úteis</button>
+      </div>
+    </div>
+
+    <button class="btn" id="btnCalcular">Calcular Intervalo</button>
+
+    <p class="muted">Dias úteis consideram feriados nacionais, estaduais (GO), municipais (Goiânia) e recesso forense do TJGO.</p>
+
+    <div class="result" id="resultado">
+      <div class="result-label" id="resultLabel">Intervalo calculado</div>
+      <div class="result-value" id="resultValue">0</div>
+      <div class="result-type" id="resultType">dias</div>
+      <div class="result-details" id="resultDetails"></div>
+      <div class="actions-bottom">
+        <button class="btn-secondary" id="btnCopiar">📋 Copiar</button>
+        <button class="btn-secondary" id="btnInverter">🔄 Inverter</button>
+        <button class="btn-secondary" id="btnLimpar">🗑️ Limpar</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // ---------- Utilidades de datas ----------
+  const fmtBR = (d)=>{
+    const pad = (n)=> String(n).padStart(2,'0');
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+  };
+  
+  const ymd = (d)=>{
+    const pad=(n)=> String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  };
+  
+  const parseISO = (s)=>{
+    const [Y,M,D] = s.split('-').map(Number);
+    return new Date(Y, M-1, D);
+  };
+  
+  const addDays = (d, n)=>{
+    const nd = new Date(d);
+    nd.setDate(nd.getDate()+n);
+    return nd;
+  };
+
+  // ---------- Base de feriados TJGO (2023-2026) ----------
+  const HOLIDAYS = new Map();
+
+  function add(name, dates) {
+    dates.forEach(s=> HOLIDAYS.set(s, name));
+  }
+  
+  function addRange(name, fromYMD, toYMD){
+    let d = parseISO(fromYMD);
+    const end = parseISO(toYMD);
+    while(d <= end){
+      HOLIDAYS.set(ymd(d), name);
+      d = addDays(d, 1);
+    }
+  }
+
+  // 2023
+  add("Confraternização Universal", ["2023-01-01"]);
+  add("Carnaval", ["2023-02-20","2023-02-21"]);
+  add("Quarta-feira de Cinzas", ["2023-02-22"]);
+  add("Semana Santa", ["2023-04-05","2023-04-06"]);
+  add("Paixão de Cristo", ["2023-04-07"]);
+  add("Tiradentes", ["2023-04-21"]);
+  add("Dia do Trabalho", ["2023-05-01"]);
+  add("Nossa Senhora Auxiliadora", ["2023-05-24"]);
+  add("Corpus Christi", ["2023-06-08"]);
+  add("Fundação da Cidade de Goiás", ["2023-07-26"]);
+  add("Independência do Brasil", ["2023-09-07"]);
+  add("Nossa Senhora Aparecida", ["2023-10-12"]);
+  add("Aniversário de Goiânia", ["2023-10-24"]);
+  add("Dia do Servidor Público", ["2023-10-28"]);
+  add("Finados", ["2023-11-02"]);
+  add("Proclamação da República", ["2023-11-15"]);
+  add("Dia da Justiça", ["2023-12-08"]);
+  add("Natal", ["2023-12-25"]);
+  addRange("Recesso Forense", "2023-12-20", "2024-01-20");
+
+  // 2024
+  add("Ano Novo", ["2024-01-01"]);
+  add("Carnaval", ["2024-02-12","2024-02-13"]);
+  add("Quarta-feira de Cinzas", ["2024-02-14"]);
+  add("Semana Santa", ["2024-03-27","2024-03-28","2024-03-29"]);
+  add("Dia do Trabalho", ["2024-05-01"]);
+  add("Nossa Senhora Auxiliadora", ["2024-05-24"]);
+  add("Corpus Christi", ["2024-05-30"]);
+  add("Ponto Facultativo", ["2024-05-31"]);
+  add("Fundação da Cidade de Goiás", ["2024-07-22"]);
+  add("Aniversário de Goiânia", ["2024-10-24"]);
+  add("Dia do Servidor Público", ["2024-11-01"]);
+  add("Proclamação da República", ["2024-11-15"]);
+  add("Dia da Consciência Negra", ["2024-11-20"]);
+  add("Natal", ["2024-12-25"]);
+  addRange("Recesso Forense", "2024-12-20", "2025-01-20");
+
+  // 2025
+  add("Ano Novo", ["2025-01-01"]);
+  add("Carnaval", ["2025-03-03","2025-03-04"]);
+  add("Quarta-feira de Cinzas", ["2025-03-05"]);
+  add("Semana Santa", ["2025-04-16","2025-04-17","2025-04-18"]);
+  add("Tiradentes", ["2025-04-21"]);
+  add("Dia do Trabalho", ["2025-05-01"]);
+  add("Nossa Senhora Auxiliadora", ["2025-05-24"]);
+  add("Corpus Christi", ["2025-06-19"]);
+  add("Fundação da Cidade de Goiás", ["2025-07-26"]);
+  add("Independência do Brasil", ["2025-09-07"]);
+  add("Nossa Senhora Aparecida", ["2025-10-12"]);
+  add("Aniversário de Goiânia", ["2025-10-24"]);
+  add("Ponto Facultativo", ["2025-10-27"]);
+  add("Dia do Servidor Público", ["2025-10-28"]);
+  add("Finados", ["2025-11-02"]);
+  add("Proclamação da República", ["2025-11-15"]);
+  add("Dia da Consciência Negra", ["2025-11-20"]);
+  add("Ponto Facultativo", ["2025-11-21"]);
+  add("Dia da Justiça", ["2025-12-08"]);
+  add("Natal", ["2025-12-25"]);
+  addRange("Recesso Forense", "2025-12-20", "2026-01-20");
+
+  // 2026
+  add("Ano Novo", ["2026-01-01"]);
+  add("Carnaval", ["2026-02-16","2026-02-17"]);
+  add("Quarta-feira de Cinzas", ["2026-02-18"]);
+  add("Semana Santa", ["2026-04-01","2026-04-02","2026-04-03"]);
+  add("Ponto Facultativo", ["2026-04-20"]);
+  add("Tiradentes", ["2026-04-21"]);
+  add("Dia do Trabalho", ["2026-05-01"]);
+  add("Nossa Senhora Auxiliadora", ["2026-05-24"]);
+  add("Corpus Christi", ["2026-06-04"]);
+  add("Ponto Facultativo", ["2026-06-05"]);
+  add("Fundação da Cidade de Goiás", ["2026-07-26"]);
+  add("Independência do Brasil", ["2026-09-07"]);
+  add("Nossa Senhora Aparecida", ["2026-10-12"]);
+  add("Aniversário de Goiânia", ["2026-10-24"]);
+  add("Dia do Servidor Público", ["2026-10-28"]);
+  add("Finados", ["2026-11-02"]);
+  add("Proclamação da República", ["2026-11-15"]);
+  add("Dia da Consciência Negra", ["2026-11-20"]);
+  add("Dia da Justiça", ["2026-12-08"]);
+  add("Natal", ["2026-12-25"]);
+  addRange("Recesso Forense", "2026-12-20", "2027-01-20");
+
+  // ---------- Funções de cálculo ----------
+  function isWeekend(d){ 
+    const g = d.getDay(); 
+    return g===0 || g===6; 
+  }
+  
+  function isHoliday(d){ 
+    return HOLIDAYS.has(ymd(d)); 
+  }
+
+  function isBusinessDay(d){
+    return !isWeekend(d) && !isHoliday(d);
+  }
+
+  function contarDiasCorridos(inicio, fim){
+    const diffTime = Math.abs(fim - inicio);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  }
+
+  function contarDiasUteis(inicio, fim){
+    let count = 0;
+    let current = new Date(inicio);
+    
+    while(current <= fim){
+      if(isBusinessDay(current)){
+        count++;
+      }
+      current = addDays(current, 1);
+    }
+    
+    return count;
+  }
+
+  // ---------- Interface ----------
+  let tipoAtual = 'corridos';
+
+  // Botões de tipo
+  document.querySelectorAll('.tipo-btn').forEach(btn => {
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      tipoAtual = this.dataset.tipo;
+    });
+  });
+
+  // Calcular
+  document.getElementById('btnCalcular').addEventListener('click', calcular);
+
+  function calcular() {
+    const sInicio = document.getElementById('dataInicial').value;
+    const sFim = document.getElementById('dataFinal').value;
+    
+    if(!sInicio || !sFim){
+      alert('Preencha as duas datas.');
+      return;
+    }
+
+    let inicio = parseISO(sInicio);
+    let fim = parseISO(sFim);
+    
+    // Inverter se necessário
+    if(inicio > fim){
+      [inicio, fim] = [fim, inicio];
+    }
+
+    let resultado;
+    if(tipoAtual === 'corridos'){
+      resultado = contarDiasCorridos(inicio, fim);
+    } else {
+      resultado = contarDiasUteis(inicio, fim);
+    }
+
+    // Exibir
+    document.getElementById('resultValue').textContent = resultado;
+    document.getElementById('resultType').textContent = 
+      tipoAtual === 'corridos' ? 'dias corridos' : 'dias úteis';
+    
+    const detalhes = [
+      `De: ${fmtBR(inicio)}`,
+      `Até: ${fmtBR(fim)}`
+    ];
+
+    if(tipoAtual === 'uteis'){
+      detalhes.push('(Excluídos: fins de semana, feriados e recesso forense)');
+    }
+
+    document.getElementById('resultDetails').innerHTML = detalhes.join('<br>');
+    document.getElementById('resultado').classList.add('show');
+  }
+
+  // Copiar
+  document.getElementById('btnCopiar').addEventListener('click', ()=>{
+    const tipo = tipoAtual === 'corridos' ? 'dias corridos' : 'dias úteis';
+    const valor = document.getElementById('resultValue').textContent;
+    const detalhes = document.getElementById('resultDetails').textContent;
+    
+    const texto = `Intervalo: ${valor} ${tipo}\n${detalhes}`;
+    
+    navigator.clipboard.writeText(texto).then(()=>{
+      const btn = document.getElementById('btnCopiar');
+      const txtOriginal = btn.innerHTML;
+      btn.innerHTML = '✓ Copiado!';
+      setTimeout(()=> btn.innerHTML = txtOriginal, 2000);
+    });
+  });
+
+  // Inverter
+  document.getElementById('btnInverter').addEventListener('click', ()=>{
+    const v1 = document.getElementById('dataInicial').value;
+    const v2 = document.getElementById('dataFinal').value;
+    document.getElementById('dataInicial').value = v2;
+    document.getElementById('dataFinal').value = v1;
+  });
+
+  // Limpar
+  document.getElementById('btnLimpar').addEventListener('click', ()=>{
+    document.getElementById('dataInicial').value = '';
+    document.getElementById('dataFinal').value = '';
+    document.getElementById('resultado').classList.remove('show');
+  });
+
+  // Enter para calcular
+  ['dataInicial', 'dataFinal'].forEach(id => {
+    document.getElementById(id).addEventListener('keypress', function(e){
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        document.getElementById('btnCalcular').click();
+      }
+    });
+  });
+
+  // Suporte a paste de data BR
+  ['dataInicial', 'dataFinal'].forEach(id => {
+    document.getElementById(id).addEventListener('paste', function(e) {
+      const paste = (e.clipboardData || window.clipboardData).getData('text');
+      const regexBR = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
+      
+      if (regexBR.test(paste)) {
+        e.preventDefault();
+        const partes = paste.split(/[\/\-]/);
+        const dia = partes[0].padStart(2, '0');
+        const mes = partes[1].padStart(2, '0');
+        const ano = partes[2];
+        this.value = `${ano}-${mes}-${dia}`;
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
