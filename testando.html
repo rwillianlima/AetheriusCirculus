@@ -769,11 +769,15 @@ function createSearchRegex(term) {
 }
 
 function fuzzyMatch(text, term) {
+    if (!term) return true;
     if (term.length <= 3) return text.includes(term);
-    const len = term.length;
-    for (let i = 0; i <= text.length - len; i++)
-        if (calculateSimilarity(text.substr(i, len), term) >= 0.8) return true;
-    return false;
+
+    const maxDiff = Math.ceil(term.length * 0.4);
+
+    return text.split(/\s+/).some(word => {
+        if (Math.abs(word.length - term.length) > maxDiff) return false;
+        return calculateSimilarity(word, term) >= 0.8;
+    });
 }
 
 function calculateSimilarity(s1, s2) {
