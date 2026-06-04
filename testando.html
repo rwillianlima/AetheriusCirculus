@@ -953,7 +953,6 @@ function extractSearchTerms(query) {
     return [...new Set([...quoted, ...terms])];
 }
 
-// î duplicado removido
 function createAccentInsensitiveRegexString(text) {
     return text
         .replace(/a/g, '[aáàâã]')
@@ -962,7 +961,7 @@ function createAccentInsensitiveRegexString(text) {
         .replace(/o/g, '[oóòôõö]')
         .replace(/u/g, '[uúùûü]')
         .replace(/c/g, '[cç]')
-        .replace(/\*/g, '.*');
+        .replace(/\*/g, '[^\\s]*'); // era '.*' — não cruzava fronteira de palavra
 }
 
 function highlightText(text, searchTerms) {
