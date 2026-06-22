@@ -308,7 +308,7 @@
       <p><strong>Leitura</strong>: contagem no primeiro dia útil subsequente.</p>
       <p><strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação (D2).</p>
       <p><strong>Quarta-Feira de Cinzas (QF)</strong>: não se inicia nem termina; conta-se durante o curso.</p>
-      <p><strong>Jogos do Brasil — Copa do Mundo 2026 (19/06 e 20/06/2026)</strong>: não se inicia nem termina prazo nessas datas; conta-se normalmente se a contagem já estiver em curso.</p>
+      <p><strong>Jogos do Brasil — Copa do Mundo 2026 (19/06 e 24/06/2026)</strong>: não se inicia nem termina prazo nessas datas; conta-se normalmente se a contagem já estiver em curso.</p>
       <p><strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.</p>
     </div>
   </div>
@@ -342,7 +342,7 @@
         <button class="chip" data-d="30">30 dias</button>
       </div>
     </div>
-    <p class="muted">Feriados TJGO (2023–2026), recesso, fins de semana, Quarta-feira de Cinzas e jogos do Brasil na Copa 2026 (19–20/06) com regra especial já aplicados.</p>
+    <p class="muted">Feriados TJGO (2023–2026), recesso, fins de semana, Quarta-feira de Cinzas e jogos do Brasil na Copa 2026 (19–24/06) com regra especial já aplicados.</p>
 
     <div class="result" id="resultado" style="display:none">
       <div class="final-date" id="finalDate"></div>
@@ -499,7 +499,7 @@
 
   // Jogos do Brasil — Copa do Mundo 2026 (regra especial: não inicia nem finaliza prazo; conta-se durante o curso, à semelhança da Quarta-feira de Cinzas)
   add("Jogo do Brasil — Copa do Mundo 2026 (regra especial)", ["2026-06-19"], {copa:true});
-  add("Jogo do Brasil — Copa do Mundo 2026 (regra especial)", ["2026-06-20"], {copa:true});
+  add("Jogo do Brasil — Copa do Mundo 2026 (regra especial)", ["2026-06-24"], {copa:true});
 
   // ---------- Helpers ----------
   function isWeekend(d){ const g = d.getDay(); return g===0 || g===6; }
