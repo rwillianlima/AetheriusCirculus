@@ -342,7 +342,7 @@
         <button class="chip" data-d="30">30 dias</button>
       </div>
     </div>
-    <p class="muted">Feriados TJGO (2023–2026), recesso, fins de semana, Quarta-feira de Cinzas e jogos do Brasil na Copa 2026 (19–24/06) com regra especial já aplicados.</p>
+    <p class="muted">Feriados TJGO (2023–2026), recesso, fins de semana, Quarta-feira de Cinzas e jogos do Brasil na Copa 2026 (19/06 e 24/06) com regra especial já aplicados.</p>
 
     <div class="result" id="resultado" style="display:none">
       <div class="final-date" id="finalDate"></div>
@@ -682,6 +682,14 @@
 
     const {end: dataFinal, counted} = addBusinessDays(addDays(inicioContagem,-1), nDias, firstNote);
 
+    // Datas de referência (marco, D1, D2) não se submetem ao veto de início/fim do dia
+    // especial (QF/Copa): o ato em si (leitura, expedição, publicação) já é permitido
+    // nessas datas pela lógica de cálculo; o veto vale apenas para a busca do início
+    // e do fim reais da contagem, nunca para esses marcos fixos.
+    const REF_DATES = new Set([ymd(marco)]);
+    if(D1) REF_DATES.add(ymd(D1));
+    if(D2) REF_DATES.add(ymd(D2));
+
     // Montar tabela
     const tbody = document.querySelector('#tabela tbody');
     tbody.innerHTML = '';
@@ -694,7 +702,7 @@
       idx++;
       const key = ymd(cursor);
       const isMarco = (key === ymd(marco));
-      let mode = (cursor < inicioContagem) ? 'start_end' : 'counting';
+      let mode = (cursor < inicioContagem && !REF_DATES.has(key)) ? 'start_end' : 'counting';
 
       const base = classifyDay(cursor, mode);
       const obsParts = [];
