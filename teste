@@ -1,1 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesquisa de Jurisprudência – 6ª Câmara Cível</title>
+    <style>
+:root {
+    --primary-color: #2f4050;
+    --secondary-color: #3b5165;
+    --background-color: #f4f4f4;
+    --text-color: #222;
+    --white: #fff;
+    --success-color: #28a745;
+    --error-color: #dc3545;
+    --warning-color: #ffc107;
+    --sumula-stf-color: #6f42c1;
+    --sumula-stj-color: #17a2b8;
+    --sumula-tjgo-color: #28a745;
+    --highlight-bg-strong: #fff3cd;
+}
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            margin: 0; padding: 0; line-height: 1.6;
+        }
+        #mobile-menu {
+            display: none; position: fixed; top: 0; left: 0; width: 100%;
+            background: var(--primary-color); padding: 15px; z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            align-items: center; justify-content: space-between;
+        }
+        .menu-toggle {
+            background: none; border: none; color: var(--white);
+            font-size: 1.5rem; cursor: pointer; padding: 5px;
+        }
+        #sidebar {
+            position: fixed; top: 0; left: 0; width: 240px; height: 100%;
+            background: var(--primary-color); box-shadow: 2px 0 6px rgba(0,0,0,.2);
+            display: flex; flex-direction: column; z-index: 999; overflow-y: auto;
+        }
+        #sidebar a {
+            display: block; padding: 12px 20px; color: var(--white);
+            text-decoration: none; font-size: 1rem; transition: background 0.3s;
+        }
+        #sidebar a:hover { background: var(--secondary-color); }
+        #clock {
+            margin-top: auto; padding: 15px 20px; color: var(--white);
+            font-size: 0.9rem; border-top: 1px solid var(--secondary-color); background: #263340;
+        }
+        #clock-time { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }
+        #clock-date { font-size: 0.85rem; opacity: 0.8; }
+        #content {
+            margin-left: 260px; padding: 40px 25px;
+            min-height: 100vh; text-align: center; color: var(--text-color);
+        }
+        #content h1 { font-size: 3.5rem; margin-bottom: 8px; color: var(--primary-color); font-weight: bold; }
+        .subtitle { font-size: 1.1rem; color: #444; margin-bottom: 5px; }
+        .dataset-info { font-size: .92rem; color: #666; margin: 2px auto 18px auto; max-width: 920px; }
+        .notice {
+            font-size: .85rem; margin-bottom: 6px; color: #333;
+            padding: 0 10px; max-width: 800px; margin-left: auto; margin-right: auto;
+        }
+        .search-main-container { max-width: 1000px; margin: 30px auto; padding: 0 15px; }
+        .main-search-field {
+            width: 100%; padding: 22px 25px; font-size: 1.4rem;
+            border: 3px solid var(--primary-color); border-radius: 10px;
+            background: var(--white); color: var(--text-color);
+            box-shadow: 0 5px 15px rgba(47,64,80,0.15);
+            transition: all 0.3s ease; margin-bottom: 25px; display: block;
+        }
+        .main-search-field:focus {
+            outline: none; border-color: var(--secondary-color);
+            box-shadow: 0 8px 25px rgba(47,64,80,0.25); transform: translateY(-2px);
+        }
+        .main-search-field::placeholder { color: #777; font-size: 1.2rem; }
+        .filters-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px; padding: 25px; margin: 20px auto; max-width: 1000px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #dee2e6;
+        }
+        .filters-row { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-end; }
+        .filter-group { display: flex; flex-direction: column; min-width: 180px; flex: 1; }
+        .filter-group label { font-weight: 600; color: var(--primary-color); margin-bottom: 8px; font-size: 0.95rem; }
+        .filter-group input, .filter-group select {
+            padding: 14px; border: 2px solid #ced4da; border-radius: 6px;
+            font-size: 1rem; background: var(--white); transition: border-color 0.3s; width: 100%;
+        }
+        .filter-group input:focus, .filter-group select:focus {
+            border-color: var(--primary-color); outline: none;
+            box-shadow: 0 0 0 3px rgba(47,64,80,0.1);
+        }
+        .search-button-container {
+            display: flex; justify-content: center;
+            margin-top: 25px; padding-top: 20px; border-top: 1px solid #dee2e6;
+        }
+        .search-button-container button {
+            padding: 16px 40px; border: none; border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white); font-weight: bold; cursor: pointer;
+            min-width: 180px; font-size: 1.1rem; transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .search-button-container button:hover {
+            background: linear-gradient(135deg, var(--secondary-color), #4a6572);
+            transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .search-button-container button:active { transform: translateY(0); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .search-button-container button:disabled { background: #cccccc; cursor: not-allowed; transform: none; box-shadow: none; }
+        .opts { display: flex; align-items: center; gap: 12px; color: #444; font-size: .9rem; justify-content: center; flex-wrap: wrap; margin-top: 15px; }
+        #resultCount { margin: 20px auto; font-weight: bold; color: var(--primary-color); max-width: 900px; padding: 0 15px; }
+        .block {
+            position: relative; background: var(--white); margin: 15px auto;
+            padding: 60px 20px 15px 15px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: left;
+            max-width: 900px; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .block.sumula-tjgo {
+            border-left: 4px solid var(--sumula-tjgo-color);
+            background: linear-gradient(90deg, #f0fff4 0%, var(--white) 50px);
+            box-shadow: 0 4px 10px rgba(40,167,69,0.2);
+        }
+        .block.sumula-stj {
+            border-left: 4px solid var(--sumula-stj-color);
+            background: linear-gradient(90deg, #e0f7fa 0%, var(--white) 50px);
+            box-shadow: 0 4px 10px rgba(23,162,184,0.2);
+        }
+        .block.sumula-stf {
+            border-left: 4px solid var(--sumula-stf-color);
+            background: linear-gradient(90deg, #f4f0ff 0%, var(--white) 50px);
+            box-shadow: 0 4px 10px rgba(111,66,193,0.2);
+        }
+        .block.jurisprudencia { border-left: 4px solid var(--primary-color); background: var(--white); }
+        .block:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,0.15); }
+        .copy-btn {
+            position: absolute; top: 20px; right: 20px; background: transparent;
+            color: #222; border: none; border-radius: 4px; padding: 6px 8px;
+            cursor: pointer; font-size: 14px; transition: all 0.3s; opacity: 0.7;
+        }
+        .copy-btn:hover { background: rgba(0,0,0,0.05); opacity: 1; transform: scale(1.05); }
+        .copy-btn.copied { color: var(--success-color); }
+        .ementa-content { line-height: 1.2; text-align: justify; font-size: 0.95rem; white-space: normal; margin: 0; padding: 0; }
+        .referencia { display: inline !important; color: #666; font-size: 0.95rem; margin-left: 8px; line-height: 1.2; white-space: normal; }
+        .highlight { background: #ffeb3b; color: #000; font-weight: bold; padding: 0 2px; border-radius: 2px; }
+        .pagination {
+            display: none; justify-content: center; gap: 6px; margin: 20px auto;
+            max-width: 900px; flex-wrap: wrap; padding: 0 15px;
+        }
+        .pagination button {
+            background: var(--primary-color); border: none; border-radius: 4px;
+            color: var(--white); padding: 8px 12px; cursor: pointer; min-width: 44px; transition: background 0.3s;
+        }
+        .pagination button:hover:not([disabled]):not(.active) { background: var(--secondary-color); }
+        .pagination button.active { background: #1c87c9; font-weight: bold; }
+        .pagination button[disabled] { opacity: .5; cursor: not-allowed; }
+        #allBlocks { display: none; padding: 0 15px; }
+        .help { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .help details { background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #dee2e6; }
+        .help summary { cursor: pointer; font-weight: bold; }
+        .help code { background: #e9ecef; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+        .spinner {
+            display: inline-block; width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,.3); border-radius: 50%;
+            border-top-color: var(--white); animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .alert { padding: 12px 15px; border-radius: 4px; margin: 15px auto; max-width: 800px; }
+        .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        #version-tag {
+            position: fixed; bottom: 5px; right: 5px; font-size: 0.75rem;
+            color: #777; background: #fff; padding: 2px 6px; border-radius: 3px; opacity: 0.8; z-index: 100;
+        }
+        @media (max-width: 768px) {
+            #mobile-menu { display: flex; }
+            #sidebar { display: none; width: 100%; height: auto; position: fixed; top: 60px; left: 0; }
+            #sidebar.active { display: flex; }
+            #content { margin-left: 0; padding: 80px 0 20px 0; }
+            #content h1 { font-size: 2rem; padding: 0 15px; }
+            .subtitle { font-size: 1rem; padding: 0 15px; }
+            .dataset-info { padding: 0 15px; }
+            .main-search-field { font-size: 1.2rem; padding: 18px 15px; margin-bottom: 20px; }
+            .filters-container { padding: 20px; }
+            .filters-row { flex-direction: column; gap: 15px; }
+            .filter-group { width: 100%; max-width: 300px; margin: 0 auto; }
+            .search-button-container button { width: 100%; max-width: 300px; padding: 14px 20px; }
+            .block { margin: 10px 15px; padding: 60px 20px 20px 20px; }
+            .copy-btn { top: 15px; right: 15px; padding: 5px 7px; font-size: 14px; }
+            .ementa-content { line-height: 1.4; text-align: justify; font-size: 0.9rem; }
+        }
+        @media (max-width: 480px) {
+            #content { padding: 70px 0 15px 0; }
+            .main-search-field { font-size: 1.1rem; padding: 16px 12px; }
+            .filters-container { padding: 15px; }
+            .filter-group { max-width: 100%; }
+            .search-button-container button { max-width: 100%; }
+            .opts { flex-direction: column; gap: 8px; }
+            .help { margin: 10px 15px 0 15px; }
+        }
+    </style>
 
+</head>
+<body>
+
+<div id="mobile-menu">
+    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+    <span style="color:white;font-weight:bold;">6ª Câmara Cível</span>
+    <div style="width:40px;"></div>
+</div>
+
+<div id="sidebar">
+    <a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a>
+    <div id="clock">
+        <div id="clock-time">--:--:--</div>
+        <div id="clock-date">--/--/----</div>
+    </div>
+</div>
+
+<div id="content">
+    <h1>Pesquisa Integrada</h1>
+    <div class="subtitle">Busca em todas as bases: Jurisprudência, Súmulas TJGO, STJ e STF</div>
+    <div id="datasetInfo" class="dataset-info">Pronto para buscar em todas as bases simultaneamente...</div>
+
+    <p class="notice">
+        Use <strong>aspas</strong> para frases exatas; <strong>E</strong> ou <strong>;</strong> para termos obrigatórios;
+        <strong>OU</strong> para alternância; <strong>NÃO</strong> ou <strong>-</strong> para excluir;
+        <strong>*</strong> como curinga. Parênteses são aceitos. Acentos são ignorados.
+    </p>
+
+    <div class="search-main-container">
+        <input type="text" id="terms" class="main-search-field"
+               placeholder='Digite aqui os termos da pesquisa. Exemplo: "dano moral" E responsabilidade OU contrato*'>
+        <div class="filters-container">
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label for="startDate">Data Inicial</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="filter-group">
+                    <label for="endDate">Data Final</label>
+                    <input type="date" id="endDate">
+                </div>
+                <div class="filter-group">
+                    <label for="dataSource">Base de Dados</label>
+                                       <select id="dataSource">
+                        <option value="">Todas as Bases</option>
+                        <option value="JURISPRUDENCIA">Jurisprudência (6ª Câmara Cível)</option>
+                        <option value="SECOES_CIVEIS">Seções Cíveis</option>
+                        <option value="SUMULAS_TJGO">Súmulas do TJGO</option>
+                        <option value="SUMULAS_STJ">Súmulas do STJ</option>
+                        <option value="SUMULAS_STF">Súmulas do STF</option>
+                        <option value="TEMAS_STJ">Temas Repetitivos do STJ</option>
+                        <option value="TEMAS_TJGO">Temas / IRDR do TJGO</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="relator">Relator</label>
+                    <select id="relator">
+                        <option value="">Todos os Relatores</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="search-button-container">
+                <button id="searchButton" onclick="performSearch()">Consultar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="help" id="helpBox">
+        <details>
+            <summary>Como pesquisar (clique para expandir)</summary>
+            <div style="margin-top:10px">
+                <p><strong>Exato com aspas</strong>: <code>"erro material"</code></p>
+                <p><strong>E (AND)</strong>: <code>termo1 E termo2</code> ou <code>termo1;termo2</code></p>
+                <p><strong>OU (OR)</strong>: <code>cláusulaA OU cláusulaB</code></p>
+                <p><strong>NÃO (NOT)</strong>: <code>NÃO termo</code> ou <code>-termo</code></p>
+                <p><strong>Parênteses</strong>: <code>BACEN E ("dano moral" OU "dano extrapatrimonial")</code></p>
+                <p style="margin-top:8px;color:#666">Dica: acentos são ignorados tanto na busca quanto no destaque.</p>
+            </div>
+        </details>
+    </div>
+
+    <div id="resultCount"></div>
+    <div id="allBlocks"></div>
+    <div id="pagination" class="pagination"></div>
+</div>
+
+<div id="version-tag">v.5.0 (Busca via API)</div>
+
+<script>
+// ── Configuração da API ──────────────────────────────────────────────────────
+const WEBAPP_URL_PUBLICO = 'https://script.google.com/macros/s/AKfycbxE2EufYylpYQ7eo2iXtX16nnV8BWvIq6c-OqIRu15ASnWV0gv4X15v7Y9_L-sm_rbL/exec';
+const SEGREDO_PUBLICO    = '23c724ea-7294-453d-b605-623b2bfad93d-90d9f360-3177-416d-b009-ec53f04342d2';
+
+const FONTES_DISPONIVEIS = {
+    'JURISPRUDENCIA': { nome: 'Jurisprudência (6ª Câmara Cível)', tipo: 'ACORDAO', temRelator: true  },
+    'SECOES_CIVEIS':  { nome: 'Seções Cíveis',                    tipo: 'ACORDAO', temRelator: true  },
+    'SUMULAS_TJGO':   { nome: 'Súmulas do TJGO',                  tipo: 'SUMULA',  temRelator: false },
+    'SUMULAS_STJ':    { nome: 'Súmulas do STJ',                   tipo: 'SUMULA',  temRelator: false },
+    'SUMULAS_STF':    { nome: 'Súmulas do STF',                   tipo: 'SUMULA',  temRelator: false },
+    'TEMAS_STJ':      { nome: 'Temas Repetitivos do STJ',         tipo: 'TEMA',    temRelator: false },
+    'TEMAS_TJGO':     { nome: 'Temas / IRDR do TJGO',             tipo: 'TEMA',    temRelator: false }
+};
+
+// ── Variáveis globais ──────────────────────────────────────────────────────────
+let filteredData       = [];
+let currentSearchTerms = '';
+let currentPage        = 1;
+const resultsPerPage   = 10;
+
+// ── Inicialização ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    carregarRelatores();
+    atualizarDisponibilidadeRelator();
+
+    document.getElementById('terms').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') performSearch();
+    });
+
+    document.getElementById('dataSource').addEventListener('change', function () {
+        atualizarDisponibilidadeRelator();
+        updateInterfaceForDataSource(this.value);
+    });
+
+    setTimeout(() => document.getElementById('terms').focus(), 500);
+});
+
+// ── UI e Utilitários ───────────────────────────────────────────────────────────
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('active');
+}
+
+function updateClock() {
+    const now = new Date();
+    document.getElementById('clock-time').textContent = now.toLocaleTimeString('pt-BR');
+    document.getElementById('clock-date').textContent = now.toLocaleDateString('pt-BR', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+}
+
+function showAlert(message, type = 'error') {
+    const existing = document.querySelector('.alert');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.className  = `alert alert-${type}`;
+    el.textContent = message;
+    document.getElementById('content').insertBefore(el, document.getElementById('resultCount'));
+    setTimeout(() => el.remove(), type === 'success' ? 5000 : 10000);
+}
+
+function showToast(message, type) {
+    const existing = document.getElementById('copy-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'copy-toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+        position:fixed; bottom:30px; right:30px;
+        background:${type === 'success' ? '#28a745' : '#dc3545'};
+        color:#fff; padding:12px 20px; border-radius:6px;
+        font-size:0.95rem; font-weight:600;
+        box-shadow:0 4px 12px rgba(0,0,0,0.25);
+        z-index:9999; opacity:0; transition:opacity 0.2s ease;
+        pointer-events:none;
+    `;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.opacity = '1'; });
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => { if (toast.parentNode) toast.remove(); }, 250);
+    }, 2500);
+}
+
+function setSearchButtonState(loading = false, text = null) {
+    const btn  = document.getElementById('searchButton');
+    btn.innerHTML = loading ? '<span class="spinner"></span> Consultando...' : (text || 'Consultar');
+    btn.disabled  = loading;
+}
+
+function updateInterfaceForDataSource(source) {
+    const title    = document.querySelector('h1');
+    const subtitle = document.querySelector('.subtitle');
+    const fonte    = FONTES_DISPONIVEIS[source];
+
+    if (!source) {
+        title.textContent    = 'Pesquisa Integrada';
+        subtitle.textContent = 'Busca em todas as bases disponíveis';
+    } else if (fonte) {
+        title.textContent    = fonte.tipo === 'ACORDAO' ? 'Pesquisa de Jurisprudência'
+                              : fonte.tipo === 'SUMULA'  ? 'Pesquisa de Súmulas'
+                              : 'Pesquisa de Temas';
+        subtitle.textContent = fonte.nome;
+    }
+}
+
+function atualizarDisponibilidadeRelator() {
+    const dataSource    = document.getElementById('dataSource').value;
+    const relatorSelect = document.getElementById('relator');
+    const fonte         = FONTES_DISPONIVEIS[dataSource];
+    const habilitar     = dataSource === '' || (fonte && fonte.temRelator);
+
+    relatorSelect.disabled = !habilitar;
+    if (!habilitar) relatorSelect.value = '';
+}
+
+function formatarDataBR(valor) {
+    if (!valor) return '';
+    const d = new Date(valor);
+    if (isNaN(d.getTime())) return String(valor);
+    return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+}
+
+// ── Comunicação com a API ────────────────────────────────────────────────────
+// Content-Type text/plain evita o "preflight" de CORS, que o Apps Script não
+// sabe responder; o doPost já lê e interpreta como JSON de qualquer forma.
+function chamarApi(acao, parametros) {
+    const corpo = { segredo: SEGREDO_PUBLICO, acao: acao, parametros: parametros || {} };
+    return fetch(WEBAPP_URL_PUBLICO, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(corpo)
+    }).then(function (resposta) {
+        return resposta.json();
+    });
+}
+
+function carregarRelatores() {
+    chamarApi('listarRelatoresPublico', { fontes: ['JURISPRUDENCIA', 'SECOES_CIVEIS'] })
+        .then(function (resposta) {
+            if (!resposta.sucesso) {
+                console.error('Falha ao carregar relatores:', resposta.erro);
+                return;
+            }
+            const sel = document.getElementById('relator');
+            resposta.dados.relatores.forEach(function (nome) {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = nome;
+                sel.appendChild(opt);
+            });
+        })
+        .catch(function (erro) {
+            console.error('Erro ao carregar relatores:', erro);
+        });
+}
+
+// ── Busca ──────────────────────────────────────────────────────────────────────
+function performSearch() {
+    if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('active');
+
+    const searchTerms = document.getElementById('terms').value;
+    const startDate   = document.getElementById('startDate').value;
+    const endDate     = document.getElementById('endDate').value;
+    const relator     = document.getElementById('relator').value;
+    const dataSource  = document.getElementById('dataSource').value;
+
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+        showAlert('A data de início não pode ser maior que a data de fim.', 'error');
+        return;
+    }
+
+    currentPage        = 1;
+    currentSearchTerms = searchTerms;
+    setSearchButtonState(true);
+
+    const parametros = { limite: 50 };
+    if (searchTerms) parametros.consultaBooleana = searchTerms;
+    if (dataSource)  parametros.fontes    = [dataSource];
+    if (relator)     parametros.relator   = relator;
+    if (startDate)   parametros.dataInicio = startDate;
+    if (endDate)     parametros.dataFim    = endDate;
+
+    chamarApi('pesquisarJurisprudenciaPublica', parametros)
+        .then(function (resposta) {
+            setSearchButtonState(false);
+
+            if (!resposta.sucesso) {
+                showAlert('Erro na busca: ' + resposta.erro.mensagem, 'error');
+                return;
+            }
+
+            filteredData = resposta.dados.resultados;
+            displayResults(filteredData);
+
+            if (resposta.avisos && resposta.avisos.length) {
+                showAlert(resposta.avisos.join(' '), 'warning');
+            }
+        })
+        .catch(function (erro) {
+            console.error(erro);
+            showAlert('Erro durante a busca. Detalhe: ' + erro.message, 'error');
+            setSearchButtonState(false);
+        });
+}
+
+// ── Exibição ───────────────────────────────────────────────────────────────────
+function displayResults(results) {
+    const allBlocks  = document.getElementById('allBlocks');
+    const resultCount= document.getElementById('resultCount');
+    const pagination = document.getElementById('pagination');
+
+    allBlocks.innerHTML  = '';
+    pagination.innerHTML = '';
+
+    if (results.length === 0) {
+        resultCount.textContent   = 'Nenhum resultado encontrado. Tente ajustar os critérios de busca.';
+        resultCount.style.display = 'block';
+        allBlocks.style.display   = 'none';
+        pagination.style.display  = 'none';
+        return;
+    }
+
+    const totalPages = Math.ceil(results.length / resultsPerPage);
+    currentPage = Math.min(currentPage, totalPages);
+
+    const startIdx = (currentPage - 1) * resultsPerPage;
+    const endIdx   = Math.min(startIdx + resultsPerPage, results.length);
+
+    resultCount.textContent   = `${results.length} resultado(s) devolvido(s). Exibindo ${startIdx + 1}–${endIdx} de ${results.length}. Página ${currentPage} de ${totalPages}.`;
+    resultCount.style.display = 'block';
+    allBlocks.style.display   = 'block';
+
+    results.slice(startIdx, endIdx).forEach((item, idx) => {
+        allBlocks.appendChild(createResultBlock(item, idx));
+    });
+
+    if (totalPages > 1) { createPagination(totalPages); pagination.style.display = 'flex'; }
+    else                { pagination.style.display = 'none'; }
+}
+
+function montarCitacao(item) {
+    if (item.tipo === 'SUMULA') {
+        return {
+            conteudo: `Súmula n.º ${item.numero} do ${item.tribunal}: ${item.enunciado}`,
+            referencia: ''
+        };
+    }
+
+    if (item.tipo === 'TEMA') {
+        const rotulo = item.numeroPrecedente ? `Tema ${item.numeroPrecedente} do ${item.tribunal}` : `Tema do ${item.tribunal}`;
+        return {
+            conteudo: item.teseFirmada || item.questaoSubmetidaAJulgamento || 'Sem conteúdo',
+            referencia: `(${rotulo}, situação: ${item.situacao || '--'}${item.processo ? ', Processo ' + item.processo : ''})`
+        };
+    }
+
+    const camara = item.camara || item.secao || '6ª Câmara Cível';
+    return {
+        conteudo: item.ementa || 'Sem conteúdo',
+        referencia: `(TJGO, ${item.processo}, ${item.relator || ''}, ${camara}, Publicação em ${formatarDataBR(item.publicacao)})`
+    };
+}
+
+function createResultBlock(item, index) {
+    const block = document.createElement('div');
+    block.className = 'block';
+
+    if      (item.fonte === 'SUMULAS_TJGO') block.classList.add('sumula-tjgo');
+    else if (item.fonte === 'SUMULAS_STJ')  block.classList.add('sumula-stj');
+    else if (item.fonte === 'SUMULAS_STF')  block.classList.add('sumula-stf');
+    else                                     block.classList.add('jurisprudencia');
+
+    const citacao = montarCitacao(item);
+    const refHtml = citacao.referencia
+        ? `<span class="referencia">${highlightText(citacao.referencia, currentSearchTerms)}</span>`
+        : '';
+
+    block.innerHTML = `
+        <button class="copy-btn" onclick="copyToClipboard(event, ${index})" title="Copiar">📋</button>
+        <div class="ementa-content">${highlightText(citacao.conteudo, currentSearchTerms)} ${refHtml}</div>
+    `;
+    return block;
+}
+
+// ── Cópia ──────────────────────────────────────────────────────────────────────
+function copyToClipboard(event, index) {
+    const btn  = event.currentTarget;
+    const item = filteredData[(currentPage - 1) * resultsPerPage + index];
+
+    if (!item) { showToast('Erro: item não encontrado.', 'error'); return; }
+
+    const citacao = montarCitacao(item);
+    const textToCopy = citacao.referencia ? `${citacao.conteudo} ${citacao.referencia}` : citacao.conteudo;
+
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(textToCopy)
+            .then(()  => showCopySuccess(btn))
+            .catch(()  => performFallbackCopy(btn, textToCopy));
+    } else {
+        performFallbackCopy(btn, textToCopy);
+    }
+}
+
+function showCopySuccess(btn) {
+    const original = btn.innerHTML;
+    btn.innerHTML  = '✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.innerHTML = original; btn.classList.remove('copied'); }, 2000);
+    showToast('Copiado para a área de transferência!', 'success');
+}
+
+function performFallbackCopy(btn, textToCopy) {
+    const ta = document.createElement('textarea');
+    ta.value = textToCopy;
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+    document.body.appendChild(ta);
+    try {
+        ta.focus(); ta.select();
+        if (document.execCommand('copy')) showCopySuccess(btn);
+        else showToast('Falha ao copiar. Tente novamente.', 'error');
+    } catch (err) {
+        console.error('Erro de fallback:', err);
+        showToast('Erro ao copiar para a área de transferência.', 'error');
+    } finally {
+        document.body.removeChild(ta);
+    }
+}
+
+// ── Destaque ───────────────────────────────────────────────────────────────────
+function extractSearchTerms(query) {
+    if (!query?.trim()) return [];
+    const norm = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const quoted = [];
+    const rest   = norm.replace(/"([^"]+)"/g, (_, p) => { if (p) quoted.push(p.trim()); return ' '; });
+    const terms  = rest.split(/\s+/)
+        .filter(t => t.length > 2 && !['e', 'ou', 'nao', 'não', ';'].includes(t) && !t.startsWith('-'));
+    return [...new Set([...quoted, ...terms])];
+}
+
+function createAccentInsensitiveRegexString(text) {
+    return text
+        .replace(/a/g, '[aáàâã]')
+        .replace(/e/g, '[eéèêë]')
+        .replace(/i/g, '[iíìî]')
+        .replace(/o/g, '[oóòôõö]')
+        .replace(/u/g, '[uúùûü]')
+        .replace(/c/g, '[cç]')
+        .replace(/\*/g, '[^\\s]*');
+}
+
+function highlightText(text, searchTerms) {
+    if (!searchTerms || !text) return text;
+    const terms = extractSearchTerms(searchTerms);
+    if (terms.length === 0) return text;
+    terms.sort((a, b) => b.length - a.length);
+    const patterns = terms.map(t => createAccentInsensitiveRegexString(escapeRegex(t)));
+    return text.replace(new RegExp(`(${patterns.join('|')})`, 'gi'), '<span class="highlight">$&</span>');
+}
+
+function escapeRegex(s) {
+    return s.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '*');
+}
+
+// ── Paginação ──────────────────────────────────────────────────────────────────
+function createPagination(totalPages) {
+    const pag = document.getElementById('pagination');
+    pag.innerHTML = '';
+
+    const prev = document.createElement('button');
+    prev.innerHTML = '‹'; prev.disabled = currentPage === 1;
+    prev.onclick = () => changePage(currentPage - 1);
+    pag.appendChild(prev);
+
+    const start = Math.max(1, currentPage - 2);
+    const end   = Math.min(totalPages, start + 4);
+    for (let i = start; i <= end; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className   = i === currentPage ? 'active' : '';
+        btn.onclick     = () => changePage(i);
+        pag.appendChild(btn);
+    }
+
+    const next = document.createElement('button');
+    next.innerHTML = '›'; next.disabled = currentPage === totalPages;
+    next.onclick = () => changePage(currentPage + 1);
+    pag.appendChild(next);
+}
+
+function changePage(newPage) {
+    currentPage = newPage;
+    displayResults(filteredData);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
