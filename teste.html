@@ -634,15 +634,27 @@ function extractSearchTerms(query) {
     return [...new Set([...quoted, ...terms])];
 }
 
-function createAccentInsensitiveRegexString(text) {
-    return text
-        .replace(/a/g, '[aáàâã]')
-        .replace(/e/g, '[eéèêë]')
-        .replace(/i/g, '[iíìî]')
-        .replace(/o/g, '[oóòôõö]')
-        .replace(/u/g, '[uúùûü]')
-        .replace(/c/g, '[cç]')
-        .replace(/\*/g, '[^\\s]*');
+function normalizarLetraParaClasse(letra) {
+    const mapa = {
+        a: '[aáàâã]', e: '[eéèêë]', i: '[iíìî]', o: '[oóòôõö]',
+        u: '[uúùûü]', c: '[cç]'
+    };
+    return mapa[letra] || letra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Quebra o termo em pedaços de letras/números e trata qualquer pontuação
+// ou espaço entre eles como equivalente — assim "art. 489", "art 489" e
+// "art,489" no texto da ementa casam com o mesmo termo digitado, do
+// mesmo jeito que a busca no Apps Script já faz.
+function construirPadraoDestaque(termo) {
+    const pedacos = termo.match(/[a-z0-9]+/gi) || [];
+    if (pedacos.length === 0) return null;
+
+    const partes = pedacos.map(function (pedaco) {
+        return pedaco.split('').map(normalizarLetraParaClasse).join('');
+    });
+
+    return partes.join('[^a-z0-9À-ÿ]+');
 }
 
 function highlightText(text, searchTerms) {
@@ -650,7 +662,10 @@ function highlightText(text, searchTerms) {
     const terms = extractSearchTerms(searchTerms);
     if (terms.length === 0) return text;
     terms.sort((a, b) => b.length - a.length);
-    const patterns = terms.map(t => createAccentInsensitiveRegexString(escapeRegex(t)));
+
+    const patterns = terms.map(construirPadraoDestaque).filter(Boolean);
+    if (patterns.length === 0) return text;
+
     return text.replace(new RegExp(`(${patterns.join('|')})`, 'gi'), '<span class="highlight">$&</span>');
 }
 
