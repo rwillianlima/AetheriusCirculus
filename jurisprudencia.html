@@ -169,6 +169,7 @@
         .alert { padding: 12px 15px; border-radius: 4px; margin: 15px auto; max-width: 800px; }
         .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
         #version-tag {
             position: fixed; bottom: 5px; right: 5px; font-size: 0.75rem;
             color: #777; background: #fff; padding: 2px 6px; border-radius: 3px; opacity: 0.8; z-index: 100;
@@ -200,7 +201,7 @@
             .help { margin: 10px 15px 0 15px; }
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
 </head>
 <body>
 
@@ -244,12 +245,15 @@
                 </div>
                 <div class="filter-group">
                     <label for="dataSource">Base de Dados</label>
-                    <select id="dataSource">
+                                       <select id="dataSource">
                         <option value="">Todas as Bases</option>
-                        <option value="0">Jurisprudência</option>
-                        <option value="2110972132">Súmulas do TJGO</option>
-                        <option value="1277187400">Súmulas do STJ</option>
-                        <option value="503544784">Súmulas do STF</option>
+                        <option value="JURISPRUDENCIA">Jurisprudência (6ª Câmara Cível)</option>
+                        <option value="SECOES_CIVEIS">Seções Cíveis</option>
+                        <option value="SUMULAS_TJGO">Súmulas do TJGO</option>
+                        <option value="SUMULAS_STJ">Súmulas do STJ</option>
+                        <option value="SUMULAS_STF">Súmulas do STF</option>
+                        <option value="TEMAS_STJ">Temas Repetitivos do STJ</option>
+                        <option value="TEMAS_TJGO">Temas / IRDR do TJGO</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -259,9 +263,7 @@
                     </select>
                 </div>
             </div>
-            <div class="opts">
-                <label><input type="checkbox" id="fuzzy"> Busca aproximada (aceita pequenas variações nas palavras)</label>
-            </div>
+
             <div class="search-button-container">
                 <button id="searchButton" onclick="performSearch()">Consultar</button>
             </div>
@@ -277,8 +279,6 @@
                 <p><strong>OU (OR)</strong>: <code>cláusulaA OU cláusulaB</code></p>
                 <p><strong>NÃO (NOT)</strong>: <code>NÃO termo</code> ou <code>-termo</code></p>
                 <p><strong>Parênteses</strong>: <code>BACEN E ("dano moral" OU "dano extrapatrimonial")</code></p>
-                <p><strong>Curinga *</strong>: <code>contrat*</code> encontra "contrato", "contratual"</p>
-                <p><strong>Busca aproximada</strong>: marque para aceitar pequenas variações.</p>
                 <p style="margin-top:8px;color:#666">Dica: acentos são ignorados tanto na busca quanto no destaque.</p>
             </div>
         </details>
@@ -289,55 +289,44 @@
     <div id="pagination" class="pagination"></div>
 </div>
 
-<div id="version-tag">v.4.1 (Parser Corrigido)</div>
+<div id="version-tag">v.5.0 (Busca via API)</div>
 
 <script>
+// ── Configuração da API ──────────────────────────────────────────────────────
+const WEBAPP_URL_PUBLICO = 'https://script.google.com/macros/s/AKfycbxE2EufYylpYQ7eo2iXtX16nnV8BWvIq6c-OqIRu15ASnWV0gv4X15v7Y9_L-sm_rbL/exec';
+const SEGREDO_PUBLICO    = 'f7ec1da2-b758-4100-b2a2-a07233d8383a';
+
+const FONTES_DISPONIVEIS = {
+    'JURISPRUDENCIA': { nome: 'Jurisprudência (6ª Câmara Cível)', tipo: 'ACORDAO', temRelator: true  },
+    'SECOES_CIVEIS':  { nome: 'Seções Cíveis',                    tipo: 'ACORDAO', temRelator: true  },
+    'SUMULAS_TJGO':   { nome: 'Súmulas do TJGO',                  tipo: 'SUMULA',  temRelator: false },
+    'SUMULAS_STJ':    { nome: 'Súmulas do STJ',                   tipo: 'SUMULA',  temRelator: false },
+    'SUMULAS_STF':    { nome: 'Súmulas do STF',                   tipo: 'SUMULA',  temRelator: false },
+    'TEMAS_STJ':      { nome: 'Temas Repetitivos do STJ',         tipo: 'TEMA',    temRelator: false },
+    'TEMAS_TJGO':     { nome: 'Temas / IRDR do TJGO',             tipo: 'TEMA',    temRelator: false }
+};
+
 // ── Variáveis globais ──────────────────────────────────────────────────────────
-let dataset            = [];
 let filteredData       = [];
 let currentSearchTerms = '';
 let currentPage        = 1;
-const resultsPerPage   = 50;
-
-const SPREADSHEET_BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub';
-
-const DATA_SOURCES = {
-    '0':          { name: 'Jurisprudência',  gid: '0'          },
-    '2110972132': { name: 'Súmulas do TJGO', gid: '2110972132' },
-    '1277187400': { name: 'Súmulas do STJ',  gid: '1277187400' },
-    '503544784':  { name: 'Súmulas do STF',  gid: '503544784'  }
-};
+const resultsPerPage   = 10;
 
 // ── Inicialização ──────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
     updateClock();
     setInterval(updateClock, 1000);
 
-    document.getElementById('relator').disabled = true;
+    carregarRelatores();
+    atualizarDisponibilidadeRelator();
 
     document.getElementById('terms').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') performSearch();
     });
 
     document.getElementById('dataSource').addEventListener('change', function () {
-        const sel = this.value;
-        const relatorSelect = document.getElementById('relator');
-
-        resetSearch();
-        dataset = [];
-
-        if (sel === '0') {
-            relatorSelect.disabled = false;
-            loadDataset();
-        } else {
-            relatorSelect.value    = '';
-            relatorSelect.disabled = true;
-            updateInterfaceForDataSource(sel === '' ? 'all' : sel);
-            document.getElementById('datasetInfo').textContent = sel === ''
-                ? 'Pronto para buscar em todas as bases simultaneamente'
-                : `Pronto para buscar em ${DATA_SOURCES[sel].name}`;
-            setSearchButtonState(false);
-        }
+        atualizarDisponibilidadeRelator();
+        updateInterfaceForDataSource(this.value);
     });
 
     setTimeout(() => document.getElementById('terms').focus(), 500);
@@ -366,7 +355,6 @@ function showAlert(message, type = 'error') {
     setTimeout(() => el.remove(), type === 'success' ? 5000 : 10000);
 }
 
-// Toast fixo no canto — visível independente de scroll
 function showToast(message, type) {
     const existing = document.getElementById('copy-toast');
     if (existing) existing.remove();
@@ -400,105 +388,70 @@ function setSearchButtonState(loading = false, text = null) {
 function updateInterfaceForDataSource(source) {
     const title    = document.querySelector('h1');
     const subtitle = document.querySelector('.subtitle');
-    if (source === 'all') {
+    const fonte    = FONTES_DISPONIVEIS[source];
+
+    if (!source) {
         title.textContent    = 'Pesquisa Integrada';
-        subtitle.textContent = 'Busca em todas as bases: Jurisprudência, Súmulas TJGO, STJ e STF';
-    } else if (DATA_SOURCES[source]) {
-        title.textContent    = source === '0' ? 'Pesquisa de Jurisprudência' : 'Pesquisa de Súmulas';
-        subtitle.textContent = DATA_SOURCES[source].name;
+        subtitle.textContent = 'Busca em todas as bases disponíveis';
+    } else if (fonte) {
+        title.textContent    = fonte.tipo === 'ACORDAO' ? 'Pesquisa de Jurisprudência'
+                              : fonte.tipo === 'SUMULA'  ? 'Pesquisa de Súmulas'
+                              : 'Pesquisa de Temas';
+        subtitle.textContent = fonte.nome;
     }
 }
 
-// Limpa resultados, filteredData e reseta página
-function resetSearch() {
-    filteredData = [];
-    currentPage  = 1;
-    document.getElementById('allBlocks').innerHTML     = '';
-    document.getElementById('resultCount').textContent = '';
-    document.getElementById('pagination').innerHTML    = '';
-    document.getElementById('relator').innerHTML       = '<option value="">Relator (todos)</option>';
+function atualizarDisponibilidadeRelator() {
+    const dataSource    = document.getElementById('dataSource').value;
+    const relatorSelect = document.getElementById('relator');
+    const fonte         = FONTES_DISPONIVEIS[dataSource];
+    const habilitar     = dataSource === '' || (fonte && fonte.temRelator);
+
+    relatorSelect.disabled = !habilitar;
+    if (!habilitar) relatorSelect.value = '';
 }
 
-function parseDate(dateString) {
-    if (!dateString) return null;
-    try {
-        const parts = dateString.split('/');
-        if (parts.length === 3) {
-            const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
-            return !isNaN(d.getTime()) ? d : null;
-        }
-        const d = new Date(dateString);
-        return !isNaN(d.getTime()) ? d : null;
-    } catch (e) { return null; }
+function formatarDataBR(valor) {
+    if (!valor) return '';
+    const d = new Date(valor);
+    if (isNaN(d.getTime())) return String(valor);
+    return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 }
 
-function populateFilters() {
-    const relators = [...new Set(dataset.map(i => i.Relator))].filter(Boolean).sort();
-    const sel      = document.getElementById('relator');
-    while (sel.children.length > 1) sel.removeChild(sel.lastChild);
-    relators.forEach(r => {
-        const opt = document.createElement('option');
-        opt.value = opt.textContent = r;
-        sel.appendChild(opt);
+// ── Comunicação com a API ────────────────────────────────────────────────────
+// Content-Type text/plain evita o "preflight" de CORS, que o Apps Script não
+// sabe responder; o doPost já lê e interpreta como JSON de qualquer forma.
+function chamarApi(acao, parametros) {
+    const corpo = { segredo: SEGREDO_PUBLICO, acao: acao, parametros: parametros || {} };
+    return fetch(WEBAPP_URL_PUBLICO, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(corpo)
+    }).then(function (resposta) {
+        return resposta.json();
     });
 }
 
-function getSourcePriority(gid) {
-    return ['2110972132', '1277187400', '503544784'].includes(gid) ? 1 : 2;
+function carregarRelatores() {
+    chamarApi('listarRelatoresPublico', { fontes: ['JURISPRUDENCIA', 'SECOES_CIVEIS'] })
+        .then(function (resposta) {
+            if (!resposta.sucesso) {
+                console.error('Falha ao carregar relatores:', resposta.erro);
+                return;
+            }
+            const sel = document.getElementById('relator');
+            resposta.dados.relatores.forEach(function (nome) {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = nome;
+                sel.appendChild(opt);
+            });
+        })
+        .catch(function (erro) {
+            console.error('Erro ao carregar relatores:', erro);
+        });
 }
 
-function getItemSearchText(item) {
-    return [
-        item.Ementa, item.Enunciado, item.Conteúdo, item.Processo,
-        item.Numero, item['Número'], item['Número da Súmula'],
-        item['Numero_da_Sumula'], item.Relator, item.InteiroTeor
-    ].filter(v => v && typeof v === 'string').join(' ').toLowerCase();
-}
-
-// ── Dados ──────────────────────────────────────────────────────────────────────
-function loadDataset() {
-    if (document.getElementById('dataSource').value !== '0') return;
-
-    const csvUrl = `${SPREADSHEET_BASE_URL}?gid=0&single=true&output=csv`;
-    updateInterfaceForDataSource('0');
-    document.getElementById('datasetInfo').textContent = 'Conectando ao banco de dados Jurisprudência...';
-    setSearchButtonState(true, 'Carregando dados...');
-
-    Papa.parse(csvUrl, {
-        download: true, header: true,
-        complete(results) {
-            if (results.errors?.length > 0) { handleDataError('Erro na formatação dos dados'); return; }
-            dataset = results.data.filter(item => item && item.Processo);
-            if (dataset.length === 0) { handleDataError('Nenhum dado encontrado na planilha'); return; }
-            updateDatasetInfo();
-            populateFilters();
-            setSearchButtonState(false);
-            showAlert(`Base carregada com ${dataset.length} registros.`, 'success');
-        },
-        error(err) { handleDataError('Erro ao carregar dados da planilha'); console.error(err); }
-    });
-}
-
-function handleDataError(msg) {
-    document.getElementById('datasetInfo').textContent = msg;
-    showAlert(msg, 'error');
-    setSearchButtonState(false);
-}
-
-function updateDatasetInfo() {
-    const sourceName = DATA_SOURCES[document.getElementById('dataSource').value]?.name || 'Base de dados';
-    let latestStr = '', latestVal = new Date(0);
-    dataset.forEach(item => {
-        if (item.Publicação) {
-            const d = parseDate(item.Publicação);
-            if (d && d > latestVal) { latestVal = d; latestStr = item.Publicação; }
-        }
-    });
-    document.getElementById('datasetInfo').textContent =
-        `${sourceName}: ${dataset.length} registros.${latestStr ? ' Última atualização: ' + latestStr : ''}`;
-}
-
-// Reseta página 1 a cada nova busca
+// ── Busca ──────────────────────────────────────────────────────────────────────
 function performSearch() {
     if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('active');
 
@@ -506,7 +459,6 @@ function performSearch() {
     const startDate   = document.getElementById('startDate').value;
     const endDate     = document.getElementById('endDate').value;
     const relator     = document.getElementById('relator').value;
-    const useFuzzy    = document.getElementById('fuzzy').checked;
     const dataSource  = document.getElementById('dataSource').value;
 
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
@@ -518,291 +470,34 @@ function performSearch() {
     currentSearchTerms = searchTerms;
     setSearchButtonState(true);
 
-    setTimeout(async () => {
-        try {
-            if (dataSource === '') {
-                filteredData = await searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy);
-            } else {
-                const base = dataSource === '0'
-                    ? dataset
-                    : await loadSingleDataset(`${SPREADSHEET_BASE_URL}?gid=${DATA_SOURCES[dataSource].gid}&single=true&output=csv`);
-                filteredData = filterSingleDataset(base, searchTerms, startDate, endDate, relator, useFuzzy, dataSource);
+    const parametros = { limite: 50 };
+    if (searchTerms) parametros.consultaBooleana = searchTerms;
+    if (dataSource)  parametros.fontes    = [dataSource];
+    if (relator)     parametros.relator   = relator;
+    if (startDate)   parametros.dataInicio = startDate;
+    if (endDate)     parametros.dataFim    = endDate;
+
+    chamarApi('pesquisarJurisprudenciaPublica', parametros)
+        .then(function (resposta) {
+            setSearchButtonState(false);
+
+            if (!resposta.sucesso) {
+                showAlert('Erro na busca: ' + resposta.erro.mensagem, 'error');
+                return;
             }
+
+            filteredData = resposta.dados.resultados;
             displayResults(filteredData);
-            setSearchButtonState(false);
-        } catch (error) {
-            console.error(error);
-            showAlert('Erro durante a busca. Detalhe: ' + error.message, 'error');
-            setSearchButtonState(false);
-        }
-    }, 100);
-}
 
-// endDate cobre o dia inteiro até 23:59:59.999
-function filterSingleDataset(dataToFilter, searchTerms, startDate, endDate, relator, useFuzzy, dataSource) {
-    return dataToFilter.filter(item => {
-        if (dataSource === '0' && relator && item.Relator !== relator) return false;
-
-        if (startDate || endDate) {
-            const d = parseDate(item.Publicação);
-            if (!d) return false;
-            if (startDate && d < new Date(startDate)) return false;
-            if (endDate) {
-                const fim = new Date(endDate);
-                fim.setHours(23, 59, 59, 999);
-                if (d > fim) return false;
+            if (resposta.avisos && resposta.avisos.length) {
+                showAlert(resposta.avisos.join(' '), 'warning');
             }
-        }
-
-        if (searchTerms) return portugueseAdvancedSearch(getItemSearchText(item), searchTerms, useFuzzy);
-        return true;
-    })
-    .map(item => ({ ...item, dataSource, baseName: DATA_SOURCES[dataSource].name }))
-    .sort((a, b) => (parseDate(b.Publicação) || new Date(0)) - (parseDate(a.Publicação) || new Date(0)));
-}
-
-async function searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy) {
-    const allGids  = ['2110972132', '1277187400', '503544784', '0'];
-    let allResults = [];
-
-    setSearchButtonState(true, 'Carregando bases...');
-
-    for (const gid of allGids) {
-        try {
-            const data = await loadSingleDataset(
-                `${SPREADSHEET_BASE_URL}?gid=${gid}&single=true&output=csv`
-            );
-            const filtered = data.filter(item => {
-                if (startDate || endDate) {
-                    const d = parseDate(item.Publicação);
-                    if (d) {
-                        if (startDate && d < new Date(startDate)) return false;
-                        if (endDate) {
-                            const fim = new Date(endDate);
-                            fim.setHours(23, 59, 59, 999);
-                            if (d > fim) return false;
-                        }
-                    }
-                }
-                if (searchTerms) return portugueseAdvancedSearch(getItemSearchText(item), searchTerms, useFuzzy);
-                return true;
-            }).map(item => ({ ...item, dataSource: gid, baseName: DATA_SOURCES[gid].name }));
-
-            allResults = allResults.concat(filtered);
-        } catch (error) {
-            console.error(`Erro ao carregar base ${gid}:`, error);
-            showAlert(`Aviso: Falha ao carregar ${DATA_SOURCES[gid].name}.`, 'warning');
-        }
-    }
-
-    return allResults.sort((a, b) => {
-        const pA = getSourcePriority(a.dataSource), pB = getSourcePriority(b.dataSource);
-        if (pA !== pB) return pA - pB;
-        return (parseDate(b.Publicação) || new Date(0)) - (parseDate(a.Publicação) || new Date(0));
-    });
-}
-
-function loadSingleDataset(url) {
-    return new Promise((resolve, reject) => {
-        Papa.parse(url, {
-            download: true, header: true,
-            complete(results) {
-                if (results.errors?.length > 0)
-                    reject(new Error(results.errors.map(e => e.message).join(', ')));
-                else
-                    resolve(results.data.filter(item => item && Object.values(item).some(v => v)));
-            },
-            error: err => reject(new Error(`Falha no download: ${err.message}`))
+        })
+        .catch(function (erro) {
+            console.error(erro);
+            showAlert('Erro durante a busca. Detalhe: ' + erro.message, 'error');
+            setSearchButtonState(false);
         });
-    });
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// MOTOR DE BUSCA — PARSER RECURSIVO DESCENDENTE  v4.1
-//
-// Gramática (precedência crescente):
-//   expr    → orExpr
-//   orExpr  → andExpr ('OU' andExpr)*
-//   andExpr → notExpr (('E'|';'|justaposição) notExpr)*
-//   notExpr → ('NÃO'|'-') atom | atom
-//   atom    → '(' expr ')' | QUOTED | TERM
-//
-// CORREÇÃO v4.1: short-circuit de && e || eliminado — o lado direito de cada
-// operador é SEMPRE avaliado antes da atribuição, garantindo que parser.pos
-// avance mesmo quando result já é false (AND) ou true (OR).
-// ══════════════════════════════════════════════════════════════════════════════
-
-function portugueseAdvancedSearch(text, query, useFuzzy = false) {
-    if (!query?.trim()) return true;
-
-    const normText  = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    const normQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-
-    const tokens = tokenizeQuery(normQuery);
-    const parser = { tokens, pos: 0 };
-
-    try {
-        return parseOrExpr(parser, normText, useFuzzy);
-    } catch (e) {
-        return normText.includes(normQuery); // fallback seguro
-    }
-}
-
-// Tokenizador
-function tokenizeQuery(query) {
-    const tokens = [];
-    let i = 0;
-
-    while (i < query.length) {
-        if (query[i] === ' ') { i++; continue; }
-
-        // Frase entre aspas
-        if (query[i] === '"') {
-            let j = i + 1;
-            while (j < query.length && query[j] !== '"') j++;
-            const phrase = query.substring(i + 1, j).trim();
-            if (phrase) tokens.push({ type: 'QUOTED', value: phrase });
-            i = j + 1;
-            continue;
-        }
-
-        if (query[i] === '(') { tokens.push({ type: 'LPAREN' }); i++; continue; }
-        if (query[i] === ')') { tokens.push({ type: 'RPAREN' }); i++; continue; }
-        if (query[i] === ';') { tokens.push({ type: 'AND'    }); i++; continue; }
-
-        // Palavra
-        let j = i;
-        while (j < query.length && !' ()";'.includes(query[j])) j++;
-        const word = query.substring(i, j);
-        i = j;
-        if (!word) continue;
-
-        if (word === 'ou')  { tokens.push({ type: 'OR'  }); continue; }
-        if (word === 'e')   { tokens.push({ type: 'AND' }); continue; }
-        if (word === 'nao') { tokens.push({ type: 'NOT' }); continue; }
-
-        // Negação por prefixo: -termo
-        if (word.startsWith('-') && word.length > 1) {
-            tokens.push({ type: 'NOT'  });
-            tokens.push({ type: 'TERM', value: word.substring(1) });
-            continue;
-        }
-
-        tokens.push({ type: 'TERM', value: word });
-    }
-
-    tokens.push({ type: 'EOF' });
-    return tokens;
-}
-
-// Nível OR — CORREÇÃO: right sempre avaliado antes de result = result || right
-function parseOrExpr(parser, text, useFuzzy) {
-    let result = parseAndExpr(parser, text, useFuzzy);
-    while (parser.pos < parser.tokens.length && parser.tokens[parser.pos].type === 'OR') {
-        parser.pos++;
-        const right = parseAndExpr(parser, text, useFuzzy); // avaliação incondicional
-        result = result || right;
-    }
-    return result;
-}
-
-// Nível AND — CORREÇÃO: right sempre avaliado antes de result = result && right
-function parseAndExpr(parser, text, useFuzzy) {
-    let result = parseNotExpr(parser, text, useFuzzy);
-    while (parser.pos < parser.tokens.length) {
-        const tok = parser.tokens[parser.pos];
-        if (tok.type === 'AND') {
-            parser.pos++;
-            const right = parseNotExpr(parser, text, useFuzzy); // avaliação incondicional
-            result = result && right;
-        } else if (['TERM', 'QUOTED', 'LPAREN', 'NOT'].includes(tok.type)) {
-            const right = parseNotExpr(parser, text, useFuzzy); // AND implícito — avaliação incondicional
-            result = result && right;
-        } else {
-            break;
-        }
-    }
-    return result;
-}
-
-// Nível NOT
-function parseNotExpr(parser, text, useFuzzy) {
-    if (parser.pos < parser.tokens.length && parser.tokens[parser.pos].type === 'NOT') {
-        parser.pos++;
-        return !parseAtom(parser, text, useFuzzy);
-    }
-    return parseAtom(parser, text, useFuzzy);
-}
-
-// Átomo: termo, frase exata ou subexpressão parentética
-function parseAtom(parser, text, useFuzzy) {
-    if (parser.pos >= parser.tokens.length) return true;
-    const tok = parser.tokens[parser.pos];
-
-    if (tok.type === 'LPAREN') {
-        parser.pos++;
-        const result = parseOrExpr(parser, text, useFuzzy);
-        if (parser.pos < parser.tokens.length && parser.tokens[parser.pos].type === 'RPAREN')
-            parser.pos++;
-        return result;
-    }
-    if (tok.type === 'QUOTED') { parser.pos++; return matchTerm(text, tok.value, useFuzzy); }
-    if (tok.type === 'TERM')   { parser.pos++; return matchTerm(text, tok.value, useFuzzy); }
-    if (tok.type === 'EOF')    { return true; }
-
-    parser.pos++; // consome token inesperado com segurança
-    return true;
-}
-
-// Verifica se um termo/frase ocorre no texto normalizado
-function matchTerm(text, term, useFuzzy) {
-    if (!term) return true;
-    if (useFuzzy) return fuzzyMatch(text, term.replace(/\*/g, ''));
-    return createSearchRegex(term).test(text);
-}
-
-// Curinga usa \w* — limita o match ao escopo da palavra
-function createSearchRegex(term) {
-    const esc = term.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
-    if (esc.includes('*')) return new RegExp('\\b' + esc.replace(/\*/g, '\\w*'), 'i');
-    return new RegExp(`\\b${esc}\\b`, 'i');
-}
-
-function fuzzyMatch(text, term) {
-    if (!term) return true;
-    if (term.length <= 3) return text.includes(term);
-
-    const maxDiff = Math.ceil(term.length * 0.4);
-
-    return text.split(/\s+/).some(word => {
-        if (Math.abs(word.length - term.length) > maxDiff) return false;
-        return calculateSimilarity(word, term) >= 0.8;
-    });
-}
-
-function calculateSimilarity(s1, s2) {
-    const longer  = s1.length > s2.length ? s1 : s2;
-    const shorter = s1.length > s2.length ? s2 : s1;
-    if (longer.length === 0) return 1.0;
-    return (longer.length - editDistance(longer, shorter)) / longer.length;
-}
-
-function editDistance(s1, s2) {
-    s1 = s1.toLowerCase(); s2 = s2.toLowerCase();
-    const costs = [];
-    for (let i = 0; i <= s1.length; i++) {
-        let last = i;
-        for (let j = 0; j <= s2.length; j++) {
-            if (i === 0) { costs[j] = j; }
-            else if (j > 0) {
-                let nv = costs[j - 1];
-                if (s1[i-1] !== s2[j-1]) nv = Math.min(nv, last, costs[j]) + 1;
-                costs[j-1] = last; last = nv;
-            }
-        }
-        if (i > 0) costs[s2.length] = last;
-    }
-    return costs[s2.length];
 }
 
 // ── Exibição ───────────────────────────────────────────────────────────────────
@@ -828,7 +523,7 @@ function displayResults(results) {
     const startIdx = (currentPage - 1) * resultsPerPage;
     const endIdx   = Math.min(startIdx + resultsPerPage, results.length);
 
-    resultCount.textContent   = `${results.length} resultado(s) encontrado(s). Exibindo ${startIdx + 1}–${endIdx} de ${results.length}. Página ${currentPage} de ${totalPages}.`;
+    resultCount.textContent   = `${results.length} resultado(s) devolvido(s). Exibindo ${startIdx + 1}–${endIdx} de ${results.length}. Página ${currentPage} de ${totalPages}.`;
     resultCount.style.display = 'block';
     allBlocks.style.display   = 'block';
 
@@ -840,67 +535,59 @@ function displayResults(results) {
     else                { pagination.style.display = 'none'; }
 }
 
+function montarCitacao(item) {
+    if (item.tipo === 'SUMULA') {
+        return {
+            conteudo: `Súmula n.º ${item.numero} do ${item.tribunal}: ${item.enunciado}`,
+            referencia: ''
+        };
+    }
+
+    if (item.tipo === 'TEMA') {
+        const rotulo = item.numeroPrecedente ? `Tema ${item.numeroPrecedente} do ${item.tribunal}` : `Tema do ${item.tribunal}`;
+        return {
+            conteudo: item.teseFirmada || item.questaoSubmetidaAJulgamento || 'Sem conteúdo',
+            referencia: `(${rotulo}, situação: ${item.situacao || '--'}${item.processo ? ', Processo ' + item.processo : ''})`
+        };
+    }
+
+    const camara = item.camara || item.secao || '6ª Câmara Cível';
+    return {
+        conteudo: item.ementa || 'Sem conteúdo',
+        referencia: `(TJGO, ${item.processo}, ${item.relator || ''}, ${camara}, Publicação em ${formatarDataBR(item.publicacao)})`
+    };
+}
+
 function createResultBlock(item, index) {
     const block = document.createElement('div');
     block.className = 'block';
 
-    if      (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
-    else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
-    else if (item.dataSource === '503544784')  block.classList.add('sumula-stf');
-    else                                       block.classList.add('jurisprudencia');
+    if      (item.fonte === 'SUMULAS_TJGO') block.classList.add('sumula-tjgo');
+    else if (item.fonte === 'SUMULAS_STJ')  block.classList.add('sumula-stj');
+    else if (item.fonte === 'SUMULAS_STF')  block.classList.add('sumula-stf');
+    else                                     block.classList.add('jurisprudencia');
 
-    const numero    = item['Número da Súmula'] || item.Processo || item.Número || item['Número']
-                    || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-    let ementaBase  = item.Enunciado || item.Ementa || 'Sem conteúdo';
-    let conteudo, referencia;
-
-    if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-        const prefixo = `Súmula n.º ${numero} do ${getTribunalName(item.dataSource)}:`;
-        let limpo     = ementaBase.replace(/súmula n\.\º\s*\d+/i, '').trim();
-        if (limpo.startsWith(numero)) limpo = limpo.substring(numero.length).trim();
-        while (':- '.includes(limpo[0])) limpo = limpo.substring(1).trim();
-        conteudo  = `${prefixo} ${limpo}`;
-        referencia = '';
-    } else {
-        const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-        conteudo   = ementaBase;
-        referencia = `(TJGO, ${numero}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
-    }
-
-    const refHtml = referencia
-        ? `<span class="referencia">${highlightText(referencia, currentSearchTerms)}</span>`
+    const citacao = montarCitacao(item);
+    const refHtml = citacao.referencia
+        ? `<span class="referencia">${highlightText(citacao.referencia, currentSearchTerms)}</span>`
         : '';
 
     block.innerHTML = `
         <button class="copy-btn" onclick="copyToClipboard(event, ${index})" title="Copiar">📋</button>
-        <div class="ementa-content">${highlightText(conteudo, currentSearchTerms)} ${refHtml}</div>
+        <div class="ementa-content">${highlightText(citacao.conteudo, currentSearchTerms)} ${refHtml}</div>
     `;
     return block;
 }
 
 // ── Cópia ──────────────────────────────────────────────────────────────────────
-// btn capturado de forma síncrona — event.currentTarget é nulo em callbacks async
 function copyToClipboard(event, index) {
     const btn  = event.currentTarget;
     const item = filteredData[(currentPage - 1) * resultsPerPage + index];
 
     if (!item) { showToast('Erro: item não encontrado.', 'error'); return; }
 
-    const numero    = item['Número da Súmula'] || item.Processo || item.Número || item['Número']
-                    || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-    let ementaBase  = item.Enunciado || item.Ementa || 'Sem conteúdo';
-    let textToCopy;
-
-    if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-        const prefixo = `Súmula n.º ${numero} do ${getTribunalName(item.dataSource)}:`;
-        let limpo     = ementaBase.replace(/súmula n\.\º\s*\d+/i, '').trim();
-        if (limpo.startsWith(numero)) limpo = limpo.substring(numero.length).trim();
-        while (':- '.includes(limpo[0])) limpo = limpo.substring(1).trim();
-        textToCopy = `${prefixo} ${limpo}`;
-    } else {
-        const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-        textToCopy   = `${ementaBase} (TJGO, ${numero}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
-    }
+    const citacao = montarCitacao(item);
+    const textToCopy = citacao.referencia ? `${citacao.conteudo} ${citacao.referencia}` : citacao.conteudo;
 
     if (navigator.clipboard) {
         navigator.clipboard.writeText(textToCopy)
@@ -919,7 +606,6 @@ function showCopySuccess(btn) {
     showToast('Copiado para a área de transferência!', 'success');
 }
 
-// btn recebido como parâmetro — não depende de event.currentTarget em contexto async
 function performFallbackCopy(btn, textToCopy) {
     const ta = document.createElement('textarea');
     ta.value = textToCopy;
@@ -937,12 +623,7 @@ function performFallbackCopy(btn, textToCopy) {
     }
 }
 
-function getTribunalName(ds) {
-    return { '2110972132': 'TJGO', '1277187400': 'STJ', '503544784': 'STF', '0': 'TJGO' }[ds] || 'TRIBUNAL';
-}
-
 // ── Destaque ───────────────────────────────────────────────────────────────────
-// 'nao' incluído na lista — após normalização NFD, 'não' → 'nao'
 function extractSearchTerms(query) {
     if (!query?.trim()) return [];
     const norm = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -953,15 +634,27 @@ function extractSearchTerms(query) {
     return [...new Set([...quoted, ...terms])];
 }
 
-function createAccentInsensitiveRegexString(text) {
-    return text
-        .replace(/a/g, '[aáàâã]')
-        .replace(/e/g, '[eéèêë]')
-        .replace(/i/g, '[iíìî]')
-        .replace(/o/g, '[oóòôõö]')
-        .replace(/u/g, '[uúùûü]')
-        .replace(/c/g, '[cç]')
-        .replace(/\*/g, '[^\\s]*'); // era '.*' — não cruzava fronteira de palavra
+function normalizarLetraParaClasse(letra) {
+    const mapa = {
+        a: '[aáàâã]', e: '[eéèêë]', i: '[iíìî]', o: '[oóòôõö]',
+        u: '[uúùûü]', c: '[cç]'
+    };
+    return mapa[letra] || letra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Quebra o termo em pedaços de letras/números e trata qualquer pontuação
+// ou espaço entre eles como equivalente — assim "art. 489", "art 489" e
+// "art,489" no texto da ementa casam com o mesmo termo digitado, do
+// mesmo jeito que a busca no Apps Script já faz.
+function construirPadraoDestaque(termo) {
+    const pedacos = termo.match(/[a-z0-9]+/gi) || [];
+    if (pedacos.length === 0) return null;
+
+    const partes = pedacos.map(function (pedaco) {
+        return pedaco.split('').map(normalizarLetraParaClasse).join('');
+    });
+
+    return partes.join('[^a-z0-9À-ÿ]+');
 }
 
 function highlightText(text, searchTerms) {
@@ -969,7 +662,10 @@ function highlightText(text, searchTerms) {
     const terms = extractSearchTerms(searchTerms);
     if (terms.length === 0) return text;
     terms.sort((a, b) => b.length - a.length);
-    const patterns = terms.map(t => createAccentInsensitiveRegexString(escapeRegex(t)));
+
+    const patterns = terms.map(construirPadraoDestaque).filter(Boolean);
+    if (patterns.length === 0) return text;
+
     return text.replace(new RegExp(`(${patterns.join('|')})`, 'gi'), '<span class="highlight">$&</span>');
 }
 
