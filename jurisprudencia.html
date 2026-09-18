@@ -544,12 +544,14 @@ function montarCitacao(item) {
     }
 
     if (item.tipo === 'TEMA') {
-        const rotulo = item.numeroPrecedente ? `Tema ${item.numeroPrecedente} do ${item.tribunal}` : `Tema do ${item.tribunal}`;
-        return {
-            conteudo: item.teseFirmada || item.questaoSubmetidaAJulgamento || 'Sem conteúdo',
-            referencia: `(${rotulo}, situação: ${item.situacao || '--'}${item.processo ? ', Processo ' + item.processo : ''})`
-        };
-    }
+    const tipoRotulo = item.tipoPrecedente || 'Tema';
+    const rotulo = item.numeroPrecedente ? `${tipoRotulo} ${item.numeroPrecedente} do ${item.tribunal}` : `${tipoRotulo} do ${item.tribunal}`;
+    const referenciaCausaPiloto = item.causaPiloto ? `, Processo-piloto ${item.causaPiloto}` : '';
+    return {
+        conteudo: item.teseFirmada || item.questaoSubmetidaAJulgamento || 'Sem conteúdo',
+        referencia: `(${rotulo}, situação: ${item.situacao || '--'}${item.processo ? ', Processo ' + item.processo : ''}${referenciaCausaPiloto})`
+    };
+}
 
     const camara = item.camara || item.secao || '6ª Câmara Cível';
     return {
