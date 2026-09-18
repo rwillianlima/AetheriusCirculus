@@ -553,12 +553,11 @@ function montarCitacao(item) {
     };
 }
 
-    const camara = item.camara || item.secao || '6ª Câmara Cível';
+           const camara = item.camara || item.secao || '6ª Câmara Cível';
     return {
         conteudo: item.ementa || 'Sem conteúdo',
-        referencia: `(TJGO, ${item.processo}, ${item.relator || ''}, ${camara}, Publicação em ${formatarDataBR(item.publicacao)})`
+        referencia: `(TJGO, ${item.processo}, ${item.relator || ''}, ${camara}, Julgamento em ${formatarDataBR(item.publicacao)})`
     };
-}
 
 function createResultBlock(item, index) {
     const block = document.createElement('div');
