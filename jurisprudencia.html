@@ -248,6 +248,7 @@
                                        <select id="dataSource">
                         <option value="">Todas as Bases</option>
                         <option value="JURISPRUDENCIA">Jurisprudência (6ª Câmara Cível)</option>
+                        <option value="JURISPRUDENCIA_COMPLETA_TJGO">Jurisprudência Completa - TJGO</option>
                         <option value="SECOES_CIVEIS">Seções Cíveis</option>
                         <option value="SUMULAS_TJGO">Súmulas do TJGO</option>
                         <option value="SUMULAS_STJ">Súmulas do STJ</option>
@@ -295,6 +296,8 @@
 // ── Configuração da API ──────────────────────────────────────────────────────
 const WEBAPP_URL_PUBLICO = 'https://script.google.com/macros/s/AKfycbxE2EufYylpYQ7eo2iXtX16nnV8BWvIq6c-OqIRu15ASnWV0gv4X15v7Y9_L-sm_rbL/exec';
 const SEGREDO_PUBLICO    = 'f7ec1da2-b758-4100-b2a2-a07233d8383a';
+const TJGO_COMPLETA_API = 'https://jurisprudencia-api.renatowill.workers.dev';
+
 
 const FONTES_DISPONIVEIS = {
     'JURISPRUDENCIA': { nome: 'Jurisprudência (6ª Câmara Cível)', tipo: 'ACORDAO', temRelator: true  },
@@ -303,7 +306,12 @@ const FONTES_DISPONIVEIS = {
     'SUMULAS_STJ':    { nome: 'Súmulas do STJ',                   tipo: 'SUMULA',  temRelator: false },
     'SUMULAS_STF':    { nome: 'Súmulas do STF',                   tipo: 'SUMULA',  temRelator: false },
     'TEMAS_STJ':      { nome: 'Temas Repetitivos do STJ',         tipo: 'TEMA',    temRelator: false },
-    'TEMAS_TJGO':     { nome: 'Temas / IRDR do TJGO',             tipo: 'TEMA',    temRelator: false }
+    'TEMAS_TJGO':     { nome: 'Temas / IRDR do TJGO',             tipo: 'TEMA',    temRelator: false },
+    'JURISPRUDENCIA_COMPLETA_TJGO': {
+    nome: 'Jurisprudência Completa - TJGO',
+    tipo: 'ACORDAO',
+    temRelator: false
+}
 };
 
 // ── Variáveis globais ──────────────────────────────────────────────────────────
@@ -450,54 +458,280 @@ function carregarRelatores() {
             console.error('Erro ao carregar relatores:', erro);
         });
 }
+function converterConsultaParaFTS5(consulta) {
+    if (!consulta || !consulta.trim()) return '';
+
+    const partes = consulta.split(/("[^"]*")/g);
+
+    return partes.map(function (parte, indice) {
+        if (indice % 2 === 1) return parte;
+
+        return parte
+            .replace(/\bNÃO\b/gi, ' NOT ')
+            .replace(/\bNAO\b/gi, ' NOT ')
+            .replace(/\bOU\b/gi, ' OR ')
+            .replace(/\bE\b/gi, ' AND ')
+            .replace(/;/g, ' AND ')
+            .replace(/(^|\s)-(?=[A-Za-zÀ-ÿ0-9"(])/g, '$1NOT ');
+    }).join('').replace(/\s+/g, ' ').trim();
+}
+
+function converterDataBRParaISO(valor) {
+    if (!valor) return '';
+
+    const partes = String(valor).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+    if (!partes) return valor;
+
+    return `${partes[3]}-${partes[2]}-${partes[1]}`;
+}
+
+function pesquisarJurisprudenciaCompletaTJGO(
+    searchTerms,
+    startDate,
+    endDate
+) {
+    const params = new URLSearchParams();
+
+    const consulta = converterConsultaParaFTS5(searchTerms);
+
+    if (consulta) {
+        params.set('q', consulta);
+    }
+
+    if (startDate) {
+        params.set('data_de', startDate);
+    }
+
+    if (endDate) {
+        params.set('data_ate', endDate);
+    }
+
+    params.set('limite', '50');
+    params.set('pagina', '1');
+    params.set('ordem', consulta ? 'relevancia' : 'data_desc');
+
+    return fetch(
+        `${TJGO_COMPLETA_API}/buscar?${params.toString()}`
+    )
+    .then(async function (resposta) {
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+            throw new Error(
+                dados.erro ||
+                dados.detalhes ||
+                `Erro HTTP ${resposta.status}`
+            );
+        }
+
+        const resultados = (dados.resultados || []).map(function (item) {
+
+            return {
+                fonte: 'JURISPRUDENCIA_COMPLETA_TJGO',
+                tipo: 'ACORDAO',
+
+                processo: item.processo || '',
+                relator: item.relator || '',
+
+                // "serventia" da nova base vira "camara"
+                // para funcionar com seu código atual.
+                camara: item.serventia || '',
+
+                // Seu código atual espera "publicacao".
+                publicacao: converterDataBRParaISO(
+                    item.data_julgamento
+                ),
+
+                ementa: item.ementa || '',
+                relevancia: item.relevancia
+            };
+
+        });
+
+        return {
+            sucesso: true,
+            dados: {
+                resultados: resultados
+            },
+            avisos: []
+        };
+    });
+}
 
 // ── Busca ──────────────────────────────────────────────────────────────────────
 function performSearch() {
-    if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('active');
 
-    const searchTerms = document.getElementById('terms').value;
-    const startDate   = document.getElementById('startDate').value;
-    const endDate     = document.getElementById('endDate').value;
-    const relator     = document.getElementById('relator').value;
-    const dataSource  = document.getElementById('dataSource').value;
+    if (window.innerWidth <= 768) {
+        document
+            .getElementById('sidebar')
+            .classList.remove('active');
+    }
 
-    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-        showAlert('A data de início não pode ser maior que a data de fim.', 'error');
+    const searchTerms =
+        document.getElementById('terms').value;
+
+    const startDate =
+        document.getElementById('startDate').value;
+
+    const endDate =
+        document.getElementById('endDate').value;
+
+    const relator =
+        document.getElementById('relator').value;
+
+    const dataSource =
+        document.getElementById('dataSource').value;
+
+
+    if (
+        startDate &&
+        endDate &&
+        new Date(startDate) > new Date(endDate)
+    ) {
+        showAlert(
+            'A data de início não pode ser maior que a data de fim.',
+            'error'
+        );
+
         return;
     }
 
-    currentPage        = 1;
+
+    currentPage = 1;
     currentSearchTerms = searchTerms;
+
     setSearchButtonState(true);
 
-    const parametros = { limite: 50 };
-    if (searchTerms) parametros.consultaBooleana = searchTerms;
-    if (dataSource)  parametros.fontes    = [dataSource];
-    if (relator)     parametros.relator   = relator;
-    if (startDate)   parametros.dataInicio = startDate;
-    if (endDate)     parametros.dataFim    = endDate;
 
-    chamarApi('pesquisarJurisprudenciaPublica', parametros)
+    // ============================================================
+    // NOVA BASE COMPLETA DO TJGO
+    // ============================================================
+
+    if (
+        dataSource ===
+        'JURISPRUDENCIA_COMPLETA_TJGO'
+    ) {
+
+        pesquisarJurisprudenciaCompletaTJGO(
+            searchTerms,
+            startDate,
+            endDate
+        )
         .then(function (resposta) {
+
             setSearchButtonState(false);
 
-            if (!resposta.sucesso) {
-                showAlert('Erro na busca: ' + resposta.erro.mensagem, 'error');
-                return;
-            }
+            filteredData =
+                resposta.dados.resultados || [];
 
-            filteredData = resposta.dados.resultados;
             displayResults(filteredData);
 
-            if (resposta.avisos && resposta.avisos.length) {
-                showAlert(resposta.avisos.join(' '), 'warning');
-            }
         })
         .catch(function (erro) {
+
             console.error(erro);
-            showAlert('Erro durante a busca. Detalhe: ' + erro.message, 'error');
+
+            showAlert(
+                'Erro na busca da Jurisprudência Completa - TJGO: ' +
+                erro.message,
+                'error'
+            );
+
             setSearchButtonState(false);
         });
+
+        return;
+    }
+
+
+    // ============================================================
+    // BASES ANTIGAS DO GOOGLE SHEETS
+    // ============================================================
+
+    const parametros = {
+        limite: 50
+    };
+
+
+    if (searchTerms) {
+        parametros.consultaBooleana =
+            searchTerms;
+    }
+
+    if (dataSource) {
+        parametros.fontes =
+            [dataSource];
+    }
+
+    if (relator) {
+        parametros.relator =
+            relator;
+    }
+
+    if (startDate) {
+        parametros.dataInicio =
+            startDate;
+    }
+
+    if (endDate) {
+        parametros.dataFim =
+            endDate;
+    }
+
+
+    chamarApi(
+        'pesquisarJurisprudenciaPublica',
+        parametros
+    )
+    .then(function (resposta) {
+
+        setSearchButtonState(false);
+
+
+        if (!resposta.sucesso) {
+
+            showAlert(
+                'Erro na busca: ' +
+                resposta.erro.mensagem,
+                'error'
+            );
+
+            return;
+        }
+
+
+        filteredData =
+            resposta.dados.resultados;
+
+        displayResults(filteredData);
+
+
+        if (
+            resposta.avisos &&
+            resposta.avisos.length
+        ) {
+
+            showAlert(
+                resposta.avisos.join(' '),
+                'warning'
+            );
+        }
+
+    })
+    .catch(function (erro) {
+
+        console.error(erro);
+
+        showAlert(
+            'Erro durante a busca. Detalhe: ' +
+            erro.message,
+            'error'
+        );
+
+        setSearchButtonState(false);
+    });
 }
 
 // ── Exibição ───────────────────────────────────────────────────────────────────
@@ -553,13 +787,13 @@ function montarCitacao(item) {
     };
 }
 
-      const camara = item.camara || item.secao || '6ª Câmara Cível';
+      const camara = item.camara || item.secao || (item.fonte === 'JURISPRUDENCIA_COMPLETA_TJGO' ? '' : '6ª Câmara Cível');
+    const partesReferencia = ['TJGO', item.processo, item.relator, camara, `Julgamento em ${formatarDataBR(item.publicacao)}`].filter(Boolean);
     return {
         conteudo: item.ementa || 'Sem conteúdo',
-        referencia: `(TJGO, ${item.processo}, ${item.relator || ''}, ${camara}, Julgamento em ${formatarDataBR(item.publicacao)})`
+        referencia: `(${partesReferencia.join(', ')})`
     };
 }
-
 function createResultBlock(item, index) {
     const block = document.createElement('div');
     block.className = 'block';
