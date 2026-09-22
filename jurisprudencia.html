@@ -485,31 +485,51 @@ function converterDataBRParaISO(valor) {
 
     return `${partes[3]}-${partes[2]}-${partes[1]}`;
 }
+    
+function normalizarNumeroProcessoCNJ(valor) {
+    if (!valor || !valor.trim()) return '';
 
-function pesquisarJurisprudenciaCompletaTJGO(
-    searchTerms,
-    startDate,
-    endDate
-) {
+    const texto = valor.trim();
+
+    // Processo já no formato CNJ
+    if (/^\d{7}-\d{2}\.\d{4}\.\d{1}\.\d{2}\.\d{4}$/.test(texto)) {
+        return texto;
+    }
+
+    // Aceita também 20 dígitos sem pontuação
+    const digitos = texto.replace(/\D/g, '');
+
+    if (/^\d{20}$/.test(digitos)) {
+        return `${digitos.slice(0, 7)}-${digitos.slice(7, 9)}.${digitos.slice(9, 13)}.${digitos.slice(13, 14)}.${digitos.slice(14, 16)}.${digitos.slice(16, 20)}`;
+    }
+
+    return '';
+}
+
+function pesquisarJurisprudenciaCompletaTJGO(searchTerms, startDate, endDate, relator) {
     const params = new URLSearchParams();
 
-    const consulta = converterConsultaParaFTS5(searchTerms);
+    const processoCNJ = normalizarNumeroProcessoCNJ(searchTerms);
+    const consultaFTS = processoCNJ
+        ? ''
+        : converterConsultaParaFTS5(searchTerms);
 
-    if (consulta) {
-        params.set('q', consulta);
+    if (processoCNJ) {
+        params.set('processo', processoCNJ);
+    } else if (consultaFTS) {
+        params.set('q', consultaFTS);
     }
 
-    if (startDate) {
-        params.set('data_de', startDate);
-    }
-
-    if (endDate) {
-        params.set('data_ate', endDate);
-    }
+    if (startDate) params.set('data_de', startDate);
+    if (endDate) params.set('data_ate', endDate);
+    if (relator) params.append('relator', relator);
 
     params.set('limite', '50');
     params.set('pagina', '1');
-    params.set('ordem', consulta ? 'relevancia' : 'data_desc');
+    params.set(
+        'ordem',
+        consultaFTS ? 'relevancia' : 'data_desc'
+    );
 
     return fetch(
         `${TJGO_COMPLETA_API}/buscar?${params.toString()}`
@@ -583,6 +603,8 @@ function performSearch() {
 
     const dataSource =
         document.getElementById('dataSource').value;
+    const processoCNJ =
+    normalizarNumeroProcessoCNJ(searchTerms);
 
 
     if (
@@ -609,11 +631,10 @@ function performSearch() {
     // NOVA BASE COMPLETA DO TJGO
     // ============================================================
 
-    if (
-        dataSource ===
-        'JURISPRUDENCIA_COMPLETA_TJGO'
-    ) {
-
+if (
+    dataSource === 'JURISPRUDENCIA_COMPLETA_TJGO' ||
+    (dataSource === '' && processoCNJ)
+) {
         pesquisarJurisprudenciaCompletaTJGO(
             searchTerms,
             startDate,
