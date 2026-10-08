@@ -460,6 +460,19 @@ function carregarRelatores() {
             console.error('Erro ao carregar relatores:', erro);
         });
 }
+// Coloca entre aspas as palavras com pontuação (art., 1.178, 481/STJ), que o Turso rejeitaria.
+function protegerPontuacaoFTS5(trecho) {
+    return trecho.split(/(\s+|[()])/).map(function (t) {
+        if (!t || /^\s+$/.test(t) || t === '(' || t === ')') return t;
+        if (t === 'AND' || t === 'OR' || t === 'NOT') return t;
+        if (/^[A-Za-zÀ-ÿ0-9_]+\*?$/.test(t)) return t;
+        const curinga = t.slice(-1) === '*' ? '*' : '';
+        const corpo = (curinga ? t.slice(0, -1) : t).replace(/"/g, '');
+        if (!/[A-Za-zÀ-ÿ0-9]/.test(corpo)) return '';
+        return '"' + corpo + '"' + curinga;
+    }).join('');
+}
+
 function converterConsultaParaFTS5(consulta) {
     if (!consulta || !consulta.trim()) return '';
 
@@ -468,13 +481,13 @@ function converterConsultaParaFTS5(consulta) {
     return partes.map(function (parte, indice) {
         if (indice % 2 === 1) return parte;
 
-        return parte
+        return protegerPontuacaoFTS5(parte
             .replace(/\bNÃO\b/gi, ' NOT ')
             .replace(/\bNAO\b/gi, ' NOT ')
             .replace(/\bOU\b/gi, ' OR ')
             .replace(/\bE\b/gi, ' AND ')
             .replace(/;/g, ' AND ')
-            .replace(/(^|\s)-(?=[A-Za-zÀ-ÿ0-9"(])/g, '$1NOT ');
+            .replace(/(^|\s)-(?=[A-Za-zÀ-ÿ0-9"(])/g, '$1NOT '));
     }).join('').replace(/\s+/g, ' ').trim();
 }
 
