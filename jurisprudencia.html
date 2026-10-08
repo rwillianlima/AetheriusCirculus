@@ -421,6 +421,8 @@ function atualizarDisponibilidadeRelator() {
 
 function formatarDataBR(valor) {
     if (!valor) return '';
+    // Datas que já vêm como DD/MM/AAAA (da planilha) ficam como estão.
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(String(valor).trim())) return String(valor).trim();
     const d = new Date(valor);
     if (isNaN(d.getTime())) return String(valor);
     return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
