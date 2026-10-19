@@ -155,6 +155,60 @@
       transform:translateY(-1px);
       box-shadow:0 2px 8px rgba(0,0,0,.15);
     }
+    .copy-mini{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:36px;
+      height:36px;
+      padding:0;
+      border:1px solid #d6d0c7;
+      border-radius:10px;
+      background:#fff;
+      color:var(--graphite);
+      cursor:pointer;
+      transition:all .2s;
+    }
+    .copy-mini:hover{ background:var(--paper-3); transform:translateY(-1px); }
+    .copy-mini svg{ width:18px; height:18px; }
+    .copy-mini.ok{ color:var(--useful); border-color:var(--useful); }
+    .copy-mini.err{ color:var(--recess); border-color:var(--recess); font-weight:800; }
+    /* Dica (menu suspenso) ao passar o mouse */
+    .tip, .tipwrap{ position:relative; }
+    .tip{ cursor:help; width:fit-content; }
+    .tip::after, .tipwrap[data-tip]::after{
+      content:attr(data-tip);
+      position:absolute;
+      left:0;
+      bottom:calc(100% + 8px);
+      z-index:20;
+      width:max-content;
+      max-width:260px;
+      padding:8px 12px;
+      border-radius:8px;
+      background:var(--graphite);
+      color:#fff;
+      font-size:.8rem;
+      font-weight:600;
+      line-height:1.35;
+      box-shadow:0 4px 14px rgba(0,0,0,.2);
+      opacity:0;
+      visibility:hidden;
+      transform:translateY(4px);
+      transition:opacity .15s, transform .15s, visibility .15s;
+      pointer-events:none;
+    }
+    .tip:hover::after, .tipwrap[data-tip]:hover::after{
+      opacity:1;
+      visibility:visible;
+      transform:translateY(0);
+    }
+    .btn:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
 
     /* Chips de atalho */
     .chips{
@@ -177,6 +231,7 @@
       transform:translateY(-1px);
     }
     .chip[data-d="5"]{border-color:var(--ash); color:var(--ash)}
+    .chip[data-d="10"]{border-color:var(--useful); color:var(--useful)}
     .chip[data-d="15"]{border-color:var(--useful); color:var(--useful)}
     .chip[data-d="30"]{border-color:var(--useful); color:var(--ash)}
 
@@ -186,13 +241,43 @@
     }
     
     .final-date{
-      padding:14px 16px; 
+      padding:18px 16px 16px;
       background:var(--hl);
-      border:1px dashed var(--line-2); 
-      border-radius:10px; 
-      font-weight:800;
+      border:1px dashed var(--line-2);
+      border-radius:12px;
       margin-bottom:12px;
       text-align:center;
+    }
+    .fd-label{
+      font-size:.95rem;
+      font-weight:600;
+      color:var(--sepia);
+      margin-bottom:8px;
+    }
+    .fd-label strong{
+      color:var(--graphite);
+      font-weight:800;
+    }
+    .fd-caption{
+      font-size:.75rem;
+      font-weight:700;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+      color:var(--sepia);
+      margin-bottom:2px;
+    }
+    .fd-main{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+    }
+    .fd-date{
+      font-size:2.1rem;
+      font-weight:800;
+      line-height:1.1;
+      color:var(--recess);
+      font-variant-numeric:tabular-nums;
     }
 
     /* Tabela */
@@ -310,17 +395,20 @@
       <p><strong>Quarta-Feira de Cinzas (QF)</strong>: não se inicia nem termina; conta-se durante o curso.</p>
       <p><strong>Jogos do Brasil — Copa do Mundo 2026 (19/06 e 24/06/2026)</strong>: não se inicia nem termina prazo nessas datas; conta-se normalmente se a contagem já estiver em curso.</p>
       <p><strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.</p>
+      <p><strong>Dias corridos</strong> (alternativa): contagem contínua, incluindo sábados, domingos e feriados; o prazo fica suspenso no recesso (20/12 a 20/01); se vencer em dia não útil, prorroga-se para o primeiro dia útil seguinte.</p>
     </div>
   </div>
 
   <section class="card">
     <div class="grid">
       <div class="field">
-        <label for="tipo">Tipo de marco inicial</label>
+        <label for="tipo" class="tip" data-tip="Data em que a movimentação foi gerada no Projudi.">Tipo de marco inicial</label>
+        <div class="tipwrap" id="tipoWrap">
           <select id="tipo">
             <option value="leitura">Leitura (intimação lida)</option>
-            <option value="expedicao" selected>Expedição (Projudi)</option>
+            <option value="expedicao" selected title="Data em que a movimentação foi gerada no Projudi.">Expedição (Projudi)</option>
           </select>
+        </div>
       </div>
 
       <div class="field">
@@ -329,32 +417,41 @@
       </div>
 
       <div class="field">
-        <label for="dias">Dias de prazo (dias úteis)</label>
+        <label for="dias">Dias de prazo</label>
         <input type="number" id="dias" min="1" step="1" value="15"/>
+      </div>
+
+      <div class="field">
+        <label for="contagem">Contagem do prazo</label>
+        <select id="contagem">
+          <option value="uteis" selected>Dias úteis (padrão)</option>
+          <option value="corridos">Dias corridos</option>
+        </select>
       </div>
     </div>
 
     <div class="actions">
-      <button class="btn primary" id="btnCalcular">Calcular prazo</button>
+      <button class="btn primary" id="btnCalcular" disabled>Calcular prazo</button>
       <div class="chips">
         <button class="chip" data-d="5">5 dias</button>
+        <button class="chip" data-d="10">10 dias</button>
         <button class="chip" data-d="15">15 dias</button>
         <button class="chip" data-d="30">30 dias</button>
       </div>
     </div>
-    <p class="muted">Feriados TJGO (2023–2026), recesso, fins de semana, Quarta-feira de Cinzas e jogos do Brasil na Copa 2026 (19/06 e 24/06) com regra especial já aplicados.</p>
+    <p class="muted" id="statusFeriados" style="margin-top:6px;">Carregando feriados da planilha…</p>
 
     <div class="result" id="resultado" style="display:none">
       <div class="final-date" id="finalDate"></div>
+      <div id="avisoCobertura" style="display:none; color:var(--recess); font-weight:700; font-size:.88rem; text-align:center; margin-bottom:12px;"></div>
       <div class="actions">
         <button class="btn secondary" id="btnCopiar">Copiar resumo</button>
-        <button class="btn ghost" id="btnCSV">Exportar CSV</button>
+        <button class="btn ghost" id="btnCSV">Copiar CSV detalhado</button>
       </div>
       <div class="table-wrapper">
         <table id="tabela">
           <thead>
             <tr>
-              <th>#</th>
               <th>Data</th>
               <th>Dia</th>
               <th>Tipo</th>
@@ -391,116 +488,129 @@
     return nd;
   };
 
-  // ---------- Base de feriados TJGO (2023-2026) ----------
-  const HOLIDAYS = new Map();
-  const ASH = new Set();
-  const COPA = new Set();
+  // ---------- Base de feriados (lida da planilha Google "feriados_tjgo") ----------
+  // COLE AQUI o link CSV gerado em Arquivo > Compartilhar > Publicar na Web (formato CSV)
+  const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRQzGEoVS6cyY6UPYSdJEtS6IQO6qzd5KM2YlrdMPMHLsMNmQNiSGBFD_Se4DwB-_NbMxUblmIW39mN/pub?output=csv';
+  const CACHE_KEY = 'feriados_tjgo_cache_v1';
 
-  function add(name, dates, {ash=false, copa=false}={}) {
-    dates.forEach(s=> {
-      HOLIDAYS.set(s, {name, yearTag: s.slice(0,4)});
-      if(ash) ASH.add(s);
-      if(copa) COPA.add(s);
-    });
+  const HOLIDAYS = new Map();   // 'aaaa-mm-dd' -> {name, tipo}
+  const ASH = new Set();        // Quarta-feira de Cinzas
+  const COPA = new Set();       // Jogos do Brasil na Copa
+  let COVER_MIN = null, COVER_MAX = null; // anos cobertos pela planilha (só feriados, sem recesso)
+
+  // Lê CSV respeitando aspas (os nomes têm vírgulas)
+  function parseCSV(text){
+    const rows = []; let row = [], cell = '', inQ = false;
+    text = text.replace(/^﻿/, '');
+    for(let i=0; i<text.length; i++){
+      const c = text[i];
+      if(inQ){
+        if(c === '"'){
+          if(text[i+1] === '"'){ cell += '"'; i++; } else inQ = false;
+        } else cell += c;
+      } else {
+        if(c === '"') inQ = true;
+        else if(c === ','){ row.push(cell); cell = ''; }
+        else if(c === '\n'){ row.push(cell); rows.push(row); row = []; cell = ''; }
+        else if(c === '\r'){ /* ignora */ }
+        else cell += c;
+      }
+    }
+    if(cell !== '' || row.length){ row.push(cell); rows.push(row); }
+    return rows.filter(r => r.some(x => String(x).trim() !== ''));
   }
-  function addRange(name, fromYMD, toYMD){
-    let d = parseISO(fromYMD);
-    const end = parseISO(toYMD);
-    while(d <= end){
-      HOLIDAYS.set(ymd(d), {name, yearTag: d.getFullYear().toString()});
-      d = addDays(d, 1);
+
+  // Aceita dd/mm/aaaa, d/m/aaaa e aaaa-mm-dd
+  function normDate(s){
+    s = String(s || '').trim();
+    let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+    return null;
+  }
+
+  function normTipo(t){
+    const x = String(t || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[\s-]+/g,'_');
+    if(x === 'recesso') return 'recesso';
+    if(x === 'quarta_cinzas' || x === 'cinzas' || x === 'qf') return 'quarta_cinzas';
+    if(x === 'copa' || x === 'jogo_brasil') return 'copa';
+    return 'feriado';
+  }
+
+  // Preenche HOLIDAYS/ASH/COPA a partir do texto CSV. Retorna {total, invalidas}
+  function aplicarCSV(text){
+    if(/^\s*</.test(text)) throw new Error('A planilha não está publicada como CSV (a resposta veio como página).');
+    const rows = parseCSV(text);
+    if(rows.length < 2) throw new Error('A planilha veio vazia.');
+    const head = rows[0].map(h => String(h).trim().toLowerCase());
+    const iData = head.indexOf('data'), iNome = head.indexOf('nome'), iTipo = head.indexOf('tipo');
+    if(iData < 0 || iNome < 0) throw new Error('Cabeçalho inválido: a primeira linha deve ter data, nome e tipo.');
+
+    HOLIDAYS.clear(); ASH.clear(); COPA.clear();
+    COVER_MIN = null; COVER_MAX = null;
+    let total = 0; const invalidas = [];
+
+    rows.slice(1).forEach((r, i) => {
+      const k = normDate(r[iData]);
+      if(!k){ invalidas.push(`linha ${i+2}: "${r[iData]}"`); return; }
+      const tipo = normTipo(iTipo >= 0 ? r[iTipo] : '');
+      const name = String(r[iNome] || '').trim() || 'Feriado';
+      HOLIDAYS.set(k, {name, tipo});
+      ASH.delete(k); COPA.delete(k);
+      if(tipo === 'quarta_cinzas') ASH.add(k);
+      if(tipo === 'copa') COPA.add(k);
+      if(tipo !== 'recesso'){
+        const y = Number(k.slice(0,4));
+        if(COVER_MIN === null || y < COVER_MIN) COVER_MIN = y;
+        if(COVER_MAX === null || y > COVER_MAX) COVER_MAX = y;
+      }
+      total++;
+    });
+    if(total < 10) throw new Error('Poucas datas válidas na planilha (' + total + ').');
+    return {total, invalidas};
+  }
+
+  // Busca na planilha; se falhar, usa a última cópia salva no navegador
+  async function loadHolidays(){
+    const st = document.getElementById('statusFeriados');
+    const btn = document.getElementById('btnCalcular');
+    const setStatus = (msg, bad=false)=>{ st.textContent = msg; st.style.color = bad ? 'var(--recess)' : ''; };
+
+    try {
+      if(SHEET_CSV_URL.startsWith('COLE_AQUI')) throw new Error('O link da planilha ainda não foi colado no código (SHEET_CSV_URL).');
+      const sep = SHEET_CSV_URL.includes('?') ? '&' : '?';
+      const resp = await fetch(SHEET_CSV_URL + sep + 't=' + Date.now(), {cache:'no-store'});
+      if(!resp.ok) throw new Error('Erro HTTP ' + resp.status);
+      const text = await resp.text();
+      const res = aplicarCSV(text);
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({text, ts: Date.now()})); } catch(e){}
+      let msg = `Feriados carregados no histórico (${COVER_MIN}–${COVER_MAX}).`;
+      if(res.invalidas.length) msg += ` Atenção: ${res.invalidas.length} linha(s) com data inválida ignorada(s): ${res.invalidas.slice(0,3).join('; ')}.`;
+      setStatus(msg, res.invalidas.length > 0);
+      btn.disabled = false;
+      return;
+    } catch(err){
+      let cache = null;
+      try { cache = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch(e){}
+      if(cache && cache.text){
+        try {
+          const res = aplicarCSV(cache.text);
+          const quando = new Date(cache.ts).toLocaleString('pt-BR');
+          setStatus(`Não foi possível ler a planilha (${err.message}). Usando a cópia salva em ${quando} (${res.total} datas). Confira se há feriados novos.`, true);
+          btn.disabled = false;
+          return;
+        } catch(e2){}
+      }
+      setStatus('Não foi possível carregar os feriados: ' + err.message + ' O cálculo está bloqueado para evitar prazo errado.', true);
+      btn.disabled = true;
     }
   }
 
-  // 2023
-  add("Confraternização Universal (Feriado Nacional)", ["2023-01-01"]);
-  add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2023-02-20","2023-02-21"]);
-  add("Quarta-feira de Cinzas (regra especial)", ["2023-02-22"], {ash:true});
-  add("Semana Santa — Feriado no Tribunal", ["2023-04-05","2023-04-06"]);
-  add("Paixão de Cristo (Feriado Nacional)", ["2023-04-07"]);
-  add("Tiradentes (Feriado Nacional)", ["2023-04-21"]);
-  add("Dia do Trabalho (Feriado Nacional)", ["2023-05-01"]);
-  add("Nossa Senhora Auxiliadora (Feriado Municipal: Goiânia, Iporá, Leopoldo de Bulhões, Senador Canedo)", ["2023-05-24"]);
-  add("Corpus Christi (Feriado Nacional)", ["2023-06-08"]);
-  add("Fundação da Cidade de Goiás (Feriado no Tribunal)", ["2023-07-26"]);
-  add("Independência do Brasil (Feriado Nacional)", ["2023-09-07"]);
-  add("Nossa Senhora Aparecida (Feriado Nacional)", ["2023-10-12"]);
-  add("Comemorativo pedra fundamental/Aniversário de Goiânia (Feriado no Tribunal)", ["2023-10-24"]);
-  add("Dia do Servidor Público (Feriado Estadual)", ["2023-10-28"]);
-  add("Finados (Feriado Nacional)", ["2023-11-02"]);
-  add("Proclamação da República (Feriado Nacional)", ["2023-11-15"]);
-  add("Dia da Justiça (Feriado no Tribunal)", ["2023-12-08"]);
-  add("Natal (Feriado Nacional)", ["2023-12-25"]);
-  addRange("Recesso Forense", "2023-12-20", "2024-01-20");
-
-  // 2024
-  add("Ano Novo (Feriado Nacional)", ["2024-01-01"]);
-  add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2024-02-12","2024-02-13"]);
-  add("Quarta-feira de Cinzas (regra especial)", ["2024-02-14"], {ash:true});
-  add("Semana Santa — Feriado no Tribunal", ["2024-03-27","2024-03-28","2024-03-29"]);
-  add("Dia do Trabalho (Feriado Nacional)", ["2024-05-01"]);
-  add("Nossa Senhora Auxiliadora (Feriado Municipal: TJ/Comarcas específicas)", ["2024-05-24"]);
-  add("Corpus Christi (Feriado Nacional)", ["2024-05-30"]);
-  add("Ponto Facultativo — PJ estadual", ["2024-05-31"]);
-  add("Fundação da Cidade de Goiás (feriado de 26/07 alterado para 22/07)", ["2024-07-22"]);
-  add("Aniversário de Goiânia (Feriado no Tribunal e em todas as comarcas)", ["2024-10-24"]);
-  add("Dia do Servidor Público (feriado do dia 28/10 alterado para 01/11)", ["2024-11-01"]);
-  add("Proclamação da República (Feriado Nacional)", ["2024-11-15"]);
-  add("Dia da Consciência Negra (Feriado Nacional)", ["2024-11-20"]);
-  add("Natal (Feriado Nacional)", ["2024-12-25"]);
-  addRange("Recesso Forense", "2024-12-20", "2025-01-20");
-
-  // 2025
-  add("Ano Novo (Feriado Nacional)", ["2025-01-01"]);
-  add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2025-03-03","2025-03-04"]);
-  add("Quarta-feira de Cinzas (regra especial)", ["2025-03-05"], {ash:true});
-  add("Semana Santa — Feriado no Tribunal", ["2025-04-16","2025-04-17","2025-04-18"]);
-  add("Tiradentes (Feriado Nacional)", ["2025-04-21"]);
-  add("Dia do Trabalho (Feriado Nacional)", ["2025-05-01"]);
-  add("Nossa Senhora Auxiliadora (Feriado Municipal: TJ/Comarcas específicas)", ["2025-05-24"]);
-  add("Corpus Christi (Feriado Nacional)", ["2025-06-19"]);
-  add("Fundação da Cidade de Goiás (Feriado no Tribunal)", ["2025-07-26"]);
-  add("Independência do Brasil (Feriado Nacional)", ["2025-09-07"]);
-  add("Nossa Senhora Aparecida (Feriado Nacional)", ["2025-10-12"]);
-  add("Aniversário de Goiânia (Feriado no Tribunal e em todas as comarcas)", ["2025-10-24"]);
-  add("Ponto Facultativo", ["2025-10-27"]);
-  add("Dia do Servidor Público (Feriado Estadual)", ["2025-10-28"]);
-  add("Finados (Feriado Nacional)", ["2025-11-02"]);
-  add("Proclamação da República (Feriado Nacional)", ["2025-11-15"]);
-  add("Dia da Consciência Negra (Feriado Nacional)", ["2025-11-20"]);
-  add("Ponto Facultativo", ["2025-11-21"]);
-  add("Dia da Justiça (Feriado — Art. 123 RITJGO)", ["2025-12-08"]);
-  add("Natal (Feriado Nacional)", ["2025-12-25"]);
-  addRange("Recesso Forense", "2025-12-20", "2026-01-20");
-
-  // 2026
-  add("Ano Novo (Feriado Nacional)", ["2026-01-01"]);
-  add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2026-02-16","2026-02-17"]);
-  add("Quarta-feira de Cinzas (regra especial)", ["2026-02-18"], {ash:true});
-  add("Ponto Facultativo — Decreto Judiciário (Moto GP)", ["2026-03-20"]);
-  add("Semana Santa — Feriado no Tribunal", ["2026-04-01","2026-04-02","2026-04-03"]);
-  add("Ponto Facultativo (ponte Tiradentes)", ["2026-04-20"]);
-  add("Tiradentes (Feriado Nacional)", ["2026-04-21"]);
-  add("Dia do Trabalho (Feriado Nacional)", ["2026-05-01"]);
-  add("Nossa Senhora Auxiliadora (Feriado Municipal: TJ/Comarcas específicas)", ["2026-05-24"]);
-  add("Corpus Christi (Feriado Nacional)", ["2026-06-04"]);
-  add("Ponto Facultativo (pós Corpus Christi)", ["2026-06-05"]);  
-  add("Fundação da Cidade de Goiás (Feriado no Tribunal)", ["2026-07-26"]);
-  add("Independência do Brasil (Feriado Nacional)", ["2026-09-07"]);
-  add("Nossa Senhora Aparecida (Feriado Nacional)", ["2026-10-12"]);
-  add("Aniversário de Goiânia (Feriado no Tribunal e em todas as comarcas)", ["2026-10-24"]);
-  add("Dia do Servidor Público (Feriado Estadual)", ["2026-10-28"]);
-  add("Finados (Feriado Nacional)", ["2026-11-02"]);
-  add("Proclamação da República (Feriado Nacional)", ["2026-11-15"]);
-  add("Dia da Consciência Negra (Feriado Nacional)", ["2026-11-20"]);
-  add("Dia da Justiça (Feriado — Art. 123 RITJGO)", ["2026-12-08"]);
-  add("Natal (Feriado Nacional)", ["2026-12-25"]);
-  addRange("Recesso Forense", "2026-12-20", "2027-01-20");
-
-  // Jogos do Brasil — Copa do Mundo 2026 (regra especial: não inicia nem finaliza prazo; conta-se durante o curso, à semelhança da Quarta-feira de Cinzas)
-  add("Jogo do Brasil — Copa do Mundo 2026 (regra especial)", ["2026-06-19"], {copa:true});
-  add("Jogo do Brasil — Copa do Mundo 2026 (regra especial)", ["2026-06-24"], {copa:true});
-  add("Jogo do Brasil — Copa do Mundo 2026 (regra especial)", ["2026-06-29"], {copa:true});
+  // Considera "recesso" pelo tipo da planilha (ou pelo nome, por segurança)
+  function isRecessInfo(h){
+    return !!(h && (h.tipo === 'recesso' || /recesso/i.test(h.name)));
+  }
 
   // ---------- Helpers ----------
   function isWeekend(d){ const g = d.getDay(); return g===0 || g===6; }
@@ -514,7 +624,7 @@
   function isSpecialRunningDay(d){ return specialRunningType(d) !== null; }
   const SPECIAL_LABELS = {
     qf: {
-      startEnd: 'QF — não inicia/não finaliza',
+      startEnd: 'Quarta-Feira de Cinzas (não inicia nem finaliza contagem)',
       counting: 'QF — contado (contagem em curso)',
       prorogA:  'QF — não finaliza; prorrogado',
       prorogB:  'Prorrogação da final por QF → Data final'
@@ -555,7 +665,7 @@
   function reasonNonUseful(d, mode='counting'){
     const h = holidayInfo(d);
     if(h){
-      if(h.name.toLowerCase().includes('recesso')) return 'Recesso forense';
+      if(isRecessInfo(h)) return 'Recesso forense';
       if(isSpecialRunningDay(d) && mode==='start_end') return SPECIAL_LABELS[specialRunningType(d)].startEnd;
       return `Feriado — ${h.name}`;
     }
@@ -575,7 +685,7 @@
 
     const h = isHoliday(d, mode);
     if(h){
-      const isRec = h.name.toLowerCase().includes('recesso');
+      const isRec = isRecessInfo(h);
       obj.tag = isRec ? 'Recesso' : 'Não útil';
       obj.badge = isRec ? 'recesso' : 'warn';
       obj.obs.push(isRec ? 'Recesso forense' : h.name);
@@ -601,7 +711,7 @@
       if(isBusinessDay(cur, 'counting')){
         count++;
         const obs = [`Dia útil de contagem #${count}`];
-        if(count === 1 && firstDayNote){ obs[0] += ` (${firstDayNote})`; }
+        if(count === 1 && firstDayNote){ obs[0] += ` - ${firstDayNote}`; }
         if(count === n){ obs.push('Data teórica final do prazo'); }
         counted.set(ymd(cur), obs);
       }
@@ -623,7 +733,7 @@
 
   function isRecessDay(d){
     const h = holidayInfo(d);
-    return !!(h && h.name.toLowerCase().includes('recesso'));
+    return isRecessInfo(h);
   }
 
   function pushNote(map, d, txt){
@@ -651,9 +761,91 @@
         continue;
       }
 
-      pushNote(pubLog, d, `Publicação D${pubIndex} (${pubIndex===1 ? '1º' : '2º'} dia útil após expedição)`);
+      pushNote(pubLog, d, pubIndex === 1 ? '1º dia útil após expedição' : '2º dia útil após expedição - data da publicação');
       return d;
     }
+  }
+
+  // ---------- Ícones ----------
+  const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  // ---------- Copiar para a área de transferência ----------
+  async function copiarTexto(texto){
+    try {
+      await navigator.clipboard.writeText(texto);
+      return true;
+    } catch(e){
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = texto;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        ta.remove();
+        return ok;
+      } catch(e2){ return false; }
+    }
+  }
+
+  // Troca o conteúdo do botão por um aviso rápido e depois restaura
+  function feedbackBotao(btn, ok, htmlOk, htmlFalha='Não foi possível copiar'){
+    if(btn.dataset.orig === undefined) btn.dataset.orig = btn.innerHTML;
+    btn.innerHTML = ok ? htmlOk : htmlFalha;
+    btn.classList.remove('ok','err');
+    btn.classList.add(ok ? 'ok' : 'err');
+    clearTimeout(btn._t);
+    btn._t = setTimeout(()=>{ btn.innerHTML = btn.dataset.orig; btn.classList.remove('ok','err'); }, 1500);
+  }
+
+  // Monta o CSV detalhado (o mesmo conteúdo que antes era baixado)
+  function montarCSV(){
+    const linhas = [["Data", "Dia da semana", "Classificação", "Observação"]];
+    document.querySelectorAll('#tabela tbody tr').forEach(tr=>{
+      const tds = tr.querySelectorAll('td');
+      linhas.push([tds[0].textContent, tds[1].textContent, tds[2].textContent, tds[3].textContent]);
+    });
+    return linhas.map(cols=> cols.map(col=> `"${String(col).replaceAll('"','""')}"`).join(',')).join('\n');
+  }
+
+  // ---------- Contagem em dias corridos ----------
+  // Recesso por data (20/12 a 20/01), independente do que estiver cadastrado na planilha
+  function isRecessPeriod(d){
+    const m = d.getMonth(), dia = d.getDate();
+    return (m === 11 && dia >= 20) || (m === 0 && dia <= 20);
+  }
+
+  // Conta todos os dias (inclusive fins de semana e feriados), suspende no recesso
+  // e, se vencer em dia não útil, prorroga para o primeiro dia útil seguinte.
+  function addCalendarDays(start, n, firstDayNote=null){
+    let cur = new Date(start);
+    let count = 0;
+    const counted = new Map();
+    while(count < n){
+      cur = addDays(cur, 1);
+      if(isRecessPeriod(cur)) continue;
+      count++;
+      const obs = [`Dia corrido de contagem #${count}`];
+      if(count === 1 && firstDayNote){ obs[0] += ` - ${firstDayNote}`; }
+      if(count === n){ obs.push('Data teórica final do prazo'); }
+      counted.set(ymd(cur), obs);
+    }
+    if(!isBusinessDay(cur, 'start_end')){
+      const key = ymd(cur);
+      let motivo = 'Vencimento em dia não útil — prorrogado';
+      if(isSpecialRunningDay(cur)) motivo = SPECIAL_LABELS[specialRunningType(cur)].prorogA;
+      else if(isWeekend(cur)) motivo = 'Vencimento em fim de semana — prorrogado';
+      else if(holidayInfo(cur)) motivo = 'Vencimento em feriado — prorrogado';
+      if(counted.has(key)) counted.get(key).push(motivo);
+      const bump = nextBusinessDay(addDays(cur,1), 'start_end');
+      counted.set(ymd(bump), ['Prorrogação para o primeiro dia útil seguinte → Data final']);
+      cur = bump;
+    } else {
+      counted.get(ymd(cur)).push('Data final do prazo');
+    }
+    return {end: cur, counted};
   }
 
   // ---------- Função principal de cálculo ----------
@@ -661,6 +853,8 @@
     const tipo = document.getElementById('tipo').value;
     const sData = document.getElementById('dataBase').value;
     const nDias = parseInt(document.getElementById('dias').value, 10);
+    const contagem = document.getElementById('contagem').value; // 'uteis' | 'corridos'
+    const rotuloContagem = (contagem === 'corridos') ? 'dias corridos' : 'dias úteis';
     
     if(!sData || isNaN(nDias) || nDias<=0){
       alert('Informe a Data Inicial e um número válido de dias.');
@@ -678,10 +872,13 @@
       D1 = nextPublicationFrom(marco, 1, PUB_NOTES);
       D2 = nextPublicationFrom(D1,    2, PUB_NOTES);
       inicioContagem = nextBusinessDay(addDays(D2,1), 'start_end');
-      firstNote = 'dia útil subsequente à publicação D2';
+      firstNote = 'dia útil subsequente à publicação';
     }
 
-    const {end: dataFinal, counted} = addBusinessDays(addDays(inicioContagem,-1), nDias, firstNote);
+    const calc = (contagem === 'corridos')
+      ? addCalendarDays(addDays(inicioContagem,-1), nDias, firstNote)
+      : addBusinessDays(addDays(inicioContagem,-1), nDias, firstNote);
+    const {end: dataFinal, counted} = calc;
 
     // Datas de referência (marco, D1, D2) não se submetem ao veto de início/fim do dia
     // especial (QF/Copa): o ato em si (leitura, expedição, publicação) já é permitido
@@ -700,7 +897,6 @@
     const endInclusive = new Date(dataFinal);
 
     while(cursor <= endInclusive){
-      idx++;
       const key = ymd(cursor);
       const isMarco = (key === ymd(marco));
       let mode = (cursor < inicioContagem && !REF_DATES.has(key)) ? 'start_end' : 'counting';
@@ -724,22 +920,35 @@
         }
       }
 
+      if(contagem === 'corridos' && cursor >= inicioContagem && isRecessPeriod(cursor)){
+        obsParts.push('Prazo suspenso — recesso (20/12 a 20/01)');
+      }
+
       if(PUB_NOTES && PUB_NOTES.has(key)){
         obsParts.push(...PUB_NOTES.get(key));
       }
 
       if(counted.has(key)){
-        base.tag = 'Útil'; base.badge='ok';
+        if(contagem === 'corridos' && !isBusinessDay(cursor, 'counting')){
+          base.tag = 'Contado'; base.badge = 'warn';
+        } else {
+          base.tag = 'Útil'; base.badge = 'ok';
+        }
         obsParts.push(...counted.get(key));
       }
 
+      // A linha do dia da expedição/leitura só aparece se tiver alguma observação
+      if(isMarco && obsParts.length === 0){
+        cursor = addDays(cursor,1);
+        continue;
+      }
+
       const tr = document.createElement('tr');
-      const tdIdx = document.createElement('td'); tdIdx.textContent = idx;
       const tdData = document.createElement('td'); tdData.textContent = fmtBR(base.date);
       const tdDow  = document.createElement('td'); tdDow.textContent = base.dow;
       const tdTag  = document.createElement('td'); tdTag.innerHTML = `<span class="tag ${base.badge}">${base.tag}</span>`;
       const tdObs  = document.createElement('td'); tdObs.textContent = obsParts.join(' • ');
-      tr.append(tdIdx, tdData, tdDow, tdTag, tdObs);
+      tr.append(tdData, tdDow, tdTag, tdObs);
 
       if(key === ymd(dataFinal)) tr.style.outline = '2px solid var(--bad)';
       tbody.appendChild(tr);
@@ -747,36 +956,47 @@
       cursor = addDays(cursor,1);
     }
 
+    const dataFinalTxt = fmtBR(dataFinal);
     document.getElementById('finalDate').innerHTML =
-      `Prazo de <span class="code">${nDias}</span> dias úteis — <strong>data final:</strong> <span class="danger">${fmtBR(dataFinal)}</span>`;
+      `<div class="fd-label">Prazo de <strong>${nDias} ${rotuloContagem}</strong></div>` +
+      `<div class="fd-caption">Data final</div>` +
+      `<div class="fd-main"><span class="fd-date">${dataFinalTxt}</span>` +
+      `<button type="button" class="copy-mini" id="btnCopiarData" title="Copiar data" aria-label="Copiar data">${ICON_COPY}</button></div>`;
+    document.getElementById('btnCopiarData').onclick = async (e)=>{
+      const btn = e.currentTarget;
+      const ok = await copiarTexto(dataFinalTxt);
+      feedbackBotao(btn, ok, ICON_CHECK, '!');
+    };
     document.getElementById('resultado').style.display = 'block';
 
+    // Aviso se o período calculado sai dos anos cadastrados na planilha
+    const avisoEl = document.getElementById('avisoCobertura');
+    const anoIni = marco.getFullYear(), anoFim = dataFinal.getFullYear();
+    if(COVER_MIN !== null && (anoIni < COVER_MIN || anoFim > COVER_MAX)){
+      avisoEl.textContent = `Atenção: a planilha só tem feriados de ${COVER_MIN} a ${COVER_MAX}. Cadastre os feriados do período calculado antes de confiar neste resultado.`;
+      avisoEl.style.display = 'block';
+    } else {
+      avisoEl.style.display = 'none';
+    }
+
     // Copiar resumo
-    document.getElementById('btnCopiar').onclick = ()=>{
+    document.getElementById('btnCopiar').onclick = async (e)=>{
+      const btn = e.currentTarget;
       const resumo = [
         `Tipo: ${tipo === 'leitura' ? 'Leitura' : 'Expedição'}`,
         `Data Inicial: ${fmtBR(marco)}`,
-        `Dias de prazo: ${nDias}`,
+        `Dias de prazo: ${nDias} (${rotuloContagem})`,
         `Data final: ${fmtBR(dataFinal)}`
       ].join('\n');
-      navigator.clipboard.writeText(resumo).then(()=> alert('Resumo copiado.'));
+      const ok = await copiarTexto(resumo);
+      feedbackBotao(btn, ok, 'Resumo copiado ✓');
     };
 
-    // Exportar CSV
-    document.getElementById('btnCSV').onclick = ()=>{
-      const linhas = [["#", "Data", "Dia da semana", "Classificação", "Observação"]];
-      const trs = document.querySelectorAll('#tabela tbody tr');
-      trs.forEach(tr=>{
-        const tds = tr.querySelectorAll('td');
-        const cols = [tds[0].textContent, tds[1].textContent, tds[2].textContent, tds[3].innerText, tds[4].textContent];
-        linhas.push(cols);
-      });
-      const csv = linhas.map(cols=> cols.map(col=> `"${String(col).replaceAll('"','""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'auditoria_prazo.csv';
-      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    // Copiar CSV detalhado (mesmo conteúdo do antigo download)
+    document.getElementById('btnCSV').onclick = async (e)=>{
+      const btn = e.currentTarget;
+      const ok = await copiarTexto(montarCSV());
+      feedbackBotao(btn, ok, 'CSV copiado ✓');
     };
   }
 
@@ -795,7 +1015,7 @@
   document.getElementById('btnCalcular').addEventListener('click', calcularPrazo);
 
   // 3. Navegação via Teclado (Tecla Enter em qualquer campo dispara o cálculo)
-  const inputsNavegaveis = ['dataBase', 'dias', 'tipo'];
+  const inputsNavegaveis = ['dataBase', 'dias', 'tipo', 'contagem'];
   inputsNavegaveis.forEach(id => {
     document.getElementById(id).addEventListener('keypress', function(e){
       if(e.key === 'Enter'){
@@ -835,10 +1055,23 @@
     document.getElementById('legalContent').classList.toggle('show');
   });
 
+  // 5b. Dica da caixa "Tipo de marco inicial": aparece quando a opção Expedição está selecionada
+  const TXT_DICA_EXPEDICAO = 'Data em que a movimentação foi gerada no Projudi.';
+  function atualizarDicaTipo(){
+    const wrap = document.getElementById('tipoWrap');
+    if(document.getElementById('tipo').value === 'expedicao') wrap.setAttribute('data-tip', TXT_DICA_EXPEDICAO);
+    else wrap.removeAttribute('data-tip');
+  }
+  document.getElementById('tipo').addEventListener('change', atualizarDicaTipo);
+  atualizarDicaTipo();
+
   // 6. Data padrão: hoje
   const today = new Date();
   const todayFormatted = today.toISOString().split('T')[0];
   document.getElementById('dataBase').value = todayFormatted;
+
+  // 7. Carregar feriados da planilha
+  loadHolidays();
 </script>
   
 </body>
