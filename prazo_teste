@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contador de Prazos Cíveis — TJGO</title>
+  <style>
+    :root{
+      --paper:#f8f6f2; --paper-3:#eee9e1; --card:#ffffff;
+      --ink:#2b2b2b; --sepia:#7a6f61; --graphite:#3a3a3a;
+      --line:#e3ded6; --line-2:#d8d1c4;
+      --useful:#4d6b4d; --holiday:#7a6f61; --recess:#6a1f1f; --ash:#8a6d3b;
+      --row:#fbf9f5; --row2:#f5f1ea; --hl:#f1ede5; --bad:var(--recess);
+    }
+
+    *{box-sizing:border-box; margin:0; padding:0;}
+    html,body{height:100%; overflow-x:hidden;}
+    body{
+      background:var(--paper); color:var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      padding:16px 16px 24px;
+    }
+
+    /* Container principal compacto */
+    .container {
+      max-width:1000px;
+      margin:0 auto;
+    }
+
+    /* Título compacto */
+    .title {
+      font-size:1.5rem;
+      font-weight:800;
+      color:var(--graphite);
+      margin-bottom:12px;
+      text-align:center;
+    }
+
+    /* Informações legais colapsáveis */
+    .legal-info {
+      background:var(--paper-3);
+      border-radius:12px;
+      padding:12px 16px;
+      margin-bottom:16px;
+      font-size:.85rem;
+      line-height:1.5;
+      color:var(--sepia);
+    }
+    .legal-toggle {
+      cursor:pointer;
+      font-weight:700;
+      color:var(--graphite);
+      user-select:none;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .legal-content {
+      margin-top:10px;
+      display:none;
+    }
+    .legal-content.show {
+      display:block;
+    }
+    .legal-toggle::before {
+      content:"▶";
+      font-size:.7rem;
+      transition:transform .2s;
+    }
+    .legal-toggle.open::before {
+      transform:rotate(90deg);
+    }
+
+    /* Card principal */
+    .card{
+      background:var(--card); 
+      border-radius:16px; 
+      border:1px solid var(--line);
+      box-shadow:0 4px 12px rgba(2,12,27,.06); 
+      padding:20px;
+      margin-bottom:16px;
+    }
+
+    /* Grid responsivo */
+    .grid{
+      display:grid; 
+      grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); 
+      gap:14px;
+      margin-bottom:14px;
+    }
+    
+    .field{
+      display:flex; 
+      flex-direction:column; 
+      gap:6px;
+    }
+    
+    label{
+      font-size:.9rem; 
+      color:#4a4743; 
+      font-weight:600;
+    }
+    
+    /* Melhora de Acessibilidade: Foco visível */
+    input:focus, select:focus, button:focus {
+      outline: 2px solid var(--graphite);
+      outline-offset: 1px;
+      border-color: var(--graphite);
+    }
+
+    /* Correção: O seletor abaixo estava faltando no seu código */
+    input[type="date"], select, input[type="number"] {
+      width:100%; 
+      padding:11px 13px; 
+      border:1px solid #e5e1db; 
+      border-radius:10px; 
+      font-size:.95rem;
+      background:#fff; 
+      /* outline:none; -> Removido para permitir navegação visual */
+    }
+
+    /* Ações */
+    .actions{
+      display:flex; 
+      align-items:center; 
+      gap:10px; 
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+
+    .btn{
+      padding:11px 16px; 
+      border-radius:10px; 
+      cursor:pointer; 
+      font-weight:700;
+      border:1px solid transparent; 
+      letter-spacing:.3px;
+      font-size:.9rem;
+      transition:all .2s;
+    }
+    .btn.primary{
+      background:var(--graphite); 
+      color:#fff;
+    }
+    .btn.secondary{
+      background:var(--sepia); 
+      color:#fff;
+    }
+    .btn.ghost{
+      background:transparent; 
+      border:1px solid #d6d0c7; 
+      color:var(--ink);
+    }
+    .btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 2px 8px rgba(0,0,0,.15);
+    }
+    .copy-mini{
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      margin-left:10px;
+      padding:4px 10px;
+      border:1px solid #d6d0c7;
+      border-radius:8px;
+      background:#fff;
+      color:var(--ink);
+      font-size:.78rem;
+      font-weight:700;
+      cursor:pointer;
+      vertical-align:middle;
+      transition:all .2s;
+    }
+    .copy-mini:hover{ background:var(--paper-3); }
+    .copy-mini svg{ width:14px; height:14px; }
+    .btn:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    /* Chips de atalho */
+    .chips{
+      display:flex; 
+      gap:8px; 
+      flex-wrap:wrap;
+    }
+    .chip{
+      padding:8px 12px; 
+      background:transparent; 
+      border:1px solid #d6d0c7;
+      border-radius:999px; 
+      font-weight:700; 
+      cursor:pointer; 
+      font-size:.85rem;
+      transition:all .2s;
+    }
+    .chip:hover{
+      background:var(--paper-3);
+      transform:translateY(-1px);
+    }
+    .chip[data-d="5"]{border-color:var(--ash); color:var(--ash)}
+    .chip[data-d="15"]{border-color:var(--useful); color:var(--useful)}
+    .chip[data-d="30"]{border-color:var(--useful); color:var(--ash)}
+
+    /* Resultado */
+    .result {
+      margin-top:16px;
+    }
+    
+    .final-date{
+      padding:14px 16px; 
+      background:var(--hl);
+      border:1px dashed var(--line-2); 
+      border-radius:10px; 
+      font-weight:800;
+      margin-bottom:12px;
+      text-align:center;
+    }
+
+    /* Tabela */
+    .table-wrapper {
+      max-height:350px; 
+      overflow:auto; 
+      border:1px solid var(--line); 
+      border-radius:10px; 
+      background:#fff;
+      margin-top:12px;
+    }
+    
+    table{
+      width:100%; 
+      border-collapse:separate; 
+      border-spacing:0; 
+      font-size:.88rem;
+    }
+    
+    thead th{
+      position:sticky; 
+      top:0; 
+      background:#fff; 
+      z-index:2; 
+      padding:10px 10px; 
+      border-bottom:2px solid var(--line);
+      font-weight:700;
+      text-align:left;
+    }
+    
+    tbody td{
+      padding:9px 10px; 
+      border-bottom:1px dashed #e7e2da;
+    }
+    
+    tbody tr:nth-child(odd){background:var(--row)}
+    tbody tr:nth-child(even){background:var(--row2)}
+    tbody tr:hover{background:var(--hl)}
+
+    /* Tags */
+    .tag{
+      padding:4px 9px; 
+      border-radius:999px; 
+      font-weight:700; 
+      font-size:.8rem; 
+      display:inline-block; 
+      border:1px solid transparent;
+      white-space:nowrap;
+    }
+    .tag.ok{background:rgba(77,107,77,.1); color:var(--useful); border-color:rgba(77,107,77,.25)}
+    .tag.warn{background:rgba(122,111,97,.1); color:var(--holiday); border-color:rgba(122,111,97,.25)}
+    .tag.recesso{background:rgba(106,31,31,.1); color:var(--recess); border-color:rgba(106,31,31,.25)}
+    .tag.info{background:rgba(138,109,59,.1); color:var(--ash); border-color:rgba(138,109,59,.25)}
+
+    /* Utilitários */
+    .code{
+      padding:2px 7px; 
+      border-radius:6px; 
+      border:1px solid var(--line); 
+      background:#f4f1eb;
+      font-family:monospace;
+    }
+    .danger{
+      color:var(--recess); 
+      font-weight:800;
+    }
+    .muted {
+      color:#7a6f61;
+      font-size:.82rem;
+    }
+
+    /* Responsividade mobile */
+    @media (max-width: 640px) {
+      body {
+        padding:12px 12px 20px;
+      }
+      .title {
+        font-size:1.3rem;
+      }
+      .grid {
+        grid-template-columns:1fr;
+      }
+      .actions {
+        flex-direction:column;
+        align-items:stretch;
+      }
+      .btn {
+        width:100%;
+        text-align:center;
+      }
+      .chips {
+        justify-content:center;
+      }
+      table {
+        font-size:.82rem;
+      }
+      thead th, tbody td {
+        padding:8px 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1 class="title">Contador de Prazos Cíveis — TJGO</h1>
+
+  <div class="legal-info">
+    <div class="legal-toggle" id="legalToggle">
+      Regras de Contagem
+    </div>
+    <div class="legal-content" id="legalContent">
+      <p><strong>Leitura</strong>: contagem no primeiro dia útil subsequente.</p>
+      <p><strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação (D2).</p>
+      <p><strong>Quarta-Feira de Cinzas (QF)</strong>: não se inicia nem termina; conta-se durante o curso.</p>
+      <p><strong>Jogos do Brasil — Copa do Mundo 2026 (19/06 e 24/06/2026)</strong>: não se inicia nem termina prazo nessas datas; conta-se normalmente se a contagem já estiver em curso.</p>
+      <p><strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.</p>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="grid">
+      <div class="field">
+        <label for="tipo">Tipo de marco inicial</label>
+          <select id="tipo">
+            <option value="leitura">Leitura (intimação lida)</option>
+            <option value="expedicao" selected>Expedição (Projudi)</option>
+          </select>
+      </div>
+
+      <div class="field">
+        <label for="dataBase">Data Inicial</label>
+        <input type="date" id="dataBase" />
+      </div>
+
+      <div class="field">
+        <label for="dias">Dias de prazo (dias úteis)</label>
+        <input type="number" id="dias" min="1" step="1" value="15"/>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="btnCalcular" disabled>Calcular prazo</button>
+      <div class="chips">
+        <button class="chip" data-d="5">5 dias</button>
+        <button class="chip" data-d="15">15 dias</button>
+        <button class="chip" data-d="30">30 dias</button>
+      </div>
+    </div>
+    <p class="muted">Feriados TJGO, recesso, fins de semana, Quarta-feira de Cinzas e jogos do Brasil na Copa 2026 com regra especial já aplicados. A lista de feriados é lida da planilha &quot;feriados_tjgo&quot;.</p>
+    <p class="muted" id="statusFeriados" style="margin-top:6px;">Carregando feriados da planilha…</p>
+
+    <div class="result" id="resultado" style="display:none">
+      <div class="final-date" id="finalDate"></div>
+      <div id="avisoCobertura" style="display:none; color:var(--recess); font-weight:700; font-size:.88rem; text-align:center; margin-bottom:12px;"></div>
+      <div class="actions">
+        <button class="btn secondary" id="btnCopiar">Copiar resumo</button>
+        <button class="btn ghost" id="btnCSV">Copiar CSV detalhado</button>
+      </div>
+      <div class="table-wrapper">
+        <table id="tabela">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Data</th>
+              <th>Dia</th>
+              <th>Tipo</th>
+              <th>Observação</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="muted" style="margin-top:10px;">Planilha de auditoria: todos os dias entre o marco e a data final são listados com justificativa.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+  // ---------- Utilidades de datas ----------
+  const fmtBR = (d)=>{
+    const pad = (n)=> String(n).padStart(2,'0');
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+  };
+  const diaSemana = (d)=>["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()];
+  const ymd = (d)=>{
+    const pad=(n)=> String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  };
+  const parseISO = (s)=>{
+    const [Y,M,D] = s.split('-').map(Number);
+    const dt = new Date(Date.UTC(Y, M-1, D));
+    return new Date(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
+  };
+  const addDays = (d, n)=>{
+    const nd = new Date(d);
+    nd.setDate(nd.getDate()+n);
+    return nd;
+  };
+
+  // ---------- Base de feriados (lida da planilha Google "feriados_tjgo") ----------
+  // COLE AQUI o link CSV gerado em Arquivo > Compartilhar > Publicar na Web (formato CSV)
+  const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRQzGEoVS6cyY6UPYSdJEtS6IQO6qzd5KM2YlrdMPMHLsMNmQNiSGBFD_Se4DwB-_NbMxUblmIW39mN/pub?output=csv';
+  const CACHE_KEY = 'feriados_tjgo_cache_v1';
+
+  const HOLIDAYS = new Map();   // 'aaaa-mm-dd' -> {name, tipo}
+  const ASH = new Set();        // Quarta-feira de Cinzas
+  const COPA = new Set();       // Jogos do Brasil na Copa
+  let COVER_MIN = null, COVER_MAX = null; // anos cobertos pela planilha (só feriados, sem recesso)
+
+  // Lê CSV respeitando aspas (os nomes têm vírgulas)
+  function parseCSV(text){
+    const rows = []; let row = [], cell = '', inQ = false;
+    text = text.replace(/^﻿/, '');
+    for(let i=0; i<text.length; i++){
+      const c = text[i];
+      if(inQ){
+        if(c === '"'){
+          if(text[i+1] === '"'){ cell += '"'; i++; } else inQ = false;
+        } else cell += c;
+      } else {
+        if(c === '"') inQ = true;
+        else if(c === ','){ row.push(cell); cell = ''; }
+        else if(c === '\n'){ row.push(cell); rows.push(row); row = []; cell = ''; }
+        else if(c === '\r'){ /* ignora */ }
+        else cell += c;
+      }
+    }
+    if(cell !== '' || row.length){ row.push(cell); rows.push(row); }
+    return rows.filter(r => r.some(x => String(x).trim() !== ''));
+  }
+
+  // Aceita dd/mm/aaaa, d/m/aaaa e aaaa-mm-dd
+  function normDate(s){
+    s = String(s || '').trim();
+    let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+    return null;
+  }
+
+  function normTipo(t){
+    const x = String(t || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[\s-]+/g,'_');
+    if(x === 'recesso') return 'recesso';
+    if(x === 'quarta_cinzas' || x === 'cinzas' || x === 'qf') return 'quarta_cinzas';
+    if(x === 'copa' || x === 'jogo_brasil') return 'copa';
+    return 'feriado';
+  }
+
+  // Preenche HOLIDAYS/ASH/COPA a partir do texto CSV. Retorna {total, invalidas}
+  function aplicarCSV(text){
+    if(/^\s*</.test(text)) throw new Error('A planilha não está publicada como CSV (a resposta veio como página).');
+    const rows = parseCSV(text);
+    if(rows.length < 2) throw new Error('A planilha veio vazia.');
+    const head = rows[0].map(h => String(h).trim().toLowerCase());
+    const iData = head.indexOf('data'), iNome = head.indexOf('nome'), iTipo = head.indexOf('tipo');
+    if(iData < 0 || iNome < 0) throw new Error('Cabeçalho inválido: a primeira linha deve ter data, nome e tipo.');
+
+    HOLIDAYS.clear(); ASH.clear(); COPA.clear();
+    COVER_MIN = null; COVER_MAX = null;
+    let total = 0; const invalidas = [];
+
+    rows.slice(1).forEach((r, i) => {
+      const k = normDate(r[iData]);
+      if(!k){ invalidas.push(`linha ${i+2}: "${r[iData]}"`); return; }
+      const tipo = normTipo(iTipo >= 0 ? r[iTipo] : '');
+      const name = String(r[iNome] || '').trim() || 'Feriado';
+      HOLIDAYS.set(k, {name, tipo});
+      ASH.delete(k); COPA.delete(k);
+      if(tipo === 'quarta_cinzas') ASH.add(k);
+      if(tipo === 'copa') COPA.add(k);
+      if(tipo !== 'recesso'){
+        const y = Number(k.slice(0,4));
+        if(COVER_MIN === null || y < COVER_MIN) COVER_MIN = y;
+        if(COVER_MAX === null || y > COVER_MAX) COVER_MAX = y;
+      }
+      total++;
+    });
+    if(total < 10) throw new Error('Poucas datas válidas na planilha (' + total + ').');
+    return {total, invalidas};
+  }
+
+  // Busca na planilha; se falhar, usa a última cópia salva no navegador
+  async function loadHolidays(){
+    const st = document.getElementById('statusFeriados');
+    const btn = document.getElementById('btnCalcular');
+    const setStatus = (msg, bad=false)=>{ st.textContent = msg; st.style.color = bad ? 'var(--recess)' : ''; };
+
+    try {
+      if(SHEET_CSV_URL.startsWith('COLE_AQUI')) throw new Error('O link da planilha ainda não foi colado no código (SHEET_CSV_URL).');
+      const sep = SHEET_CSV_URL.includes('?') ? '&' : '?';
+      const resp = await fetch(SHEET_CSV_URL + sep + 't=' + Date.now(), {cache:'no-store'});
+      if(!resp.ok) throw new Error('Erro HTTP ' + resp.status);
+      const text = await resp.text();
+      const res = aplicarCSV(text);
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({text, ts: Date.now()})); } catch(e){}
+      let msg = `Feriados carregados da planilha (${res.total} datas, ${COVER_MIN}–${COVER_MAX}).`;
+      if(res.invalidas.length) msg += ` Atenção: ${res.invalidas.length} linha(s) com data inválida ignorada(s): ${res.invalidas.slice(0,3).join('; ')}.`;
+      setStatus(msg, res.invalidas.length > 0);
+      btn.disabled = false;
+      return;
+    } catch(err){
+      let cache = null;
+      try { cache = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch(e){}
+      if(cache && cache.text){
+        try {
+          const res = aplicarCSV(cache.text);
+          const quando = new Date(cache.ts).toLocaleString('pt-BR');
+          setStatus(`Não foi possível ler a planilha (${err.message}). Usando a cópia salva em ${quando} (${res.total} datas). Confira se há feriados novos.`, true);
+          btn.disabled = false;
+          return;
+        } catch(e2){}
+      }
+      setStatus('Não foi possível carregar os feriados: ' + err.message + ' O cálculo está bloqueado para evitar prazo errado.', true);
+      btn.disabled = true;
+    }
+  }
+
+  // Considera "recesso" pelo tipo da planilha (ou pelo nome, por segurança)
+  function isRecessInfo(h){
+    return !!(h && (h.tipo === 'recesso' || /recesso/i.test(h.name)));
+  }
+
+  // ---------- Helpers ----------
+  function isWeekend(d){ const g = d.getDay(); return g===0 || g===6; }
+  function isAshWednesday(d){ return ASH.has(ymd(d)); }
+  function isCopaDay(d){ return COPA.has(ymd(d)); }
+  function specialRunningType(d){
+    if(isAshWednesday(d)) return 'qf';
+    if(isCopaDay(d)) return 'copa';
+    return null;
+  }
+  function isSpecialRunningDay(d){ return specialRunningType(d) !== null; }
+  const SPECIAL_LABELS = {
+    qf: {
+      startEnd: 'QF — não inicia/não finaliza',
+      counting: 'QF — contado (contagem em curso)',
+      prorogA:  'QF — não finaliza; prorrogado',
+      prorogB:  'Prorrogação da final por QF → Data final'
+    },
+    copa: {
+      startEnd: 'Jogo do Brasil (Copa) — não inicia/não finaliza',
+      counting: 'Jogo do Brasil (Copa) — contado (contagem em curso)',
+      prorogA:  'Jogo do Brasil (Copa) — não finaliza; prorrogado',
+      prorogB:  'Prorrogação da final por jogo do Brasil (Copa) → Data final'
+    }
+  };
+  function holidayInfo(d){ const k=ymd(d); return HOLIDAYS.get(k) || null; }
+
+  function isHoliday(d, mode='counting'){
+    const info = holidayInfo(d);
+    if(info){
+      if(isSpecialRunningDay(d)){
+        return mode === 'start_end' ? info : null;
+      }
+      return info;
+    }
+    return null;
+  }
+
+  function isBusinessDay(d, mode='counting'){
+    if(isWeekend(d)) return false;
+    const h = isHoliday(d, mode);
+    if(h) return false;
+    return true;
+  }
+  
+  function nextBusinessDay(d, mode='counting'){
+    let cur = new Date(d);
+    while(!isBusinessDay(cur, mode)) cur = addDays(cur,1);
+    return cur;
+  }
+
+  function reasonNonUseful(d, mode='counting'){
+    const h = holidayInfo(d);
+    if(h){
+      if(isRecessInfo(h)) return 'Recesso forense';
+      if(isSpecialRunningDay(d) && mode==='start_end') return SPECIAL_LABELS[specialRunningType(d)].startEnd;
+      return `Feriado — ${h.name}`;
+    }
+    if(isWeekend(d)) return 'Fim de semana';
+    if(isSpecialRunningDay(d) && mode==='start_end') return SPECIAL_LABELS[specialRunningType(d)].startEnd;
+    return '';
+  }
+
+  function classifyDay(d, mode='counting'){
+    const obj = {date: new Date(d), dow: diaSemana(d), tag: '', badge:'', obs:[], final:false};
+
+    if(isWeekend(d)){
+      obj.tag='Não útil'; obj.badge='warn';
+      obj.obs.push('Fim de semana');
+      return obj;
+    }
+
+    const h = isHoliday(d, mode);
+    if(h){
+      const isRec = isRecessInfo(h);
+      obj.tag = isRec ? 'Recesso' : 'Não útil';
+      obj.badge = isRec ? 'recesso' : 'warn';
+      obj.obs.push(isRec ? 'Recesso forense' : h.name);
+      if(isSpecialRunningDay(d) && mode==='start_end'){ obj.obs = [SPECIAL_LABELS[specialRunningType(d)].startEnd]; obj.badge='info'; }
+      return obj;
+    }
+
+    if(isSpecialRunningDay(d) && mode==='counting'){
+      obj.tag='Útil'; obj.badge='info'; obj.obs.push(SPECIAL_LABELS[specialRunningType(d)].counting);
+      return obj;
+    }
+
+    obj.tag='Útil'; obj.badge='ok';
+    return obj;
+  }
+
+  function addBusinessDays(start, n, firstDayNote=null){
+    let cur = new Date(start);
+    let count = 0;
+    const counted = new Map();
+    while(count < n){
+      cur = addDays(cur, 1);
+      if(isBusinessDay(cur, 'counting')){
+        count++;
+        const obs = [`Dia útil de contagem #${count}`];
+        if(count === 1 && firstDayNote){ obs[0] += ` (${firstDayNote})`; }
+        if(count === n){ obs.push('Data teórica final do prazo'); }
+        counted.set(ymd(cur), obs);
+      }
+    }
+    if(isSpecialRunningDay(cur)){
+      const key = ymd(cur);
+      const type = specialRunningType(cur);
+      if(counted.has(key)) counted.get(key).push(SPECIAL_LABELS[type].prorogA);
+      let bump = nextBusinessDay(addDays(cur,1), 'start_end');
+      counted.set(ymd(bump), [SPECIAL_LABELS[type].prorogB]);
+      cur = bump;
+    } else {
+      const key = ymd(cur);
+      if(counted.has(key)) counted.get(key).push('Data final do prazo');
+      else counted.set(key, ['Data final do prazo']);
+    }
+    return {end: cur, counted};
+  }
+
+  function isRecessDay(d){
+    const h = holidayInfo(d);
+    return isRecessInfo(h);
+  }
+
+  function pushNote(map, d, txt){
+    const k = ymd(d);
+    if(!map.has(k)) map.set(k, []);
+    map.get(k).push(txt);
+  }
+
+  function nextPublicationFrom(prevDate, pubIndex, pubLog){
+    let d = addDays(prevDate, 1);
+    while(true){
+      const wknd = isWeekend(d);
+      const h = holidayInfo(d);
+      const rec = isRecessDay(d);
+
+      if(wknd){
+        pushNote(pubLog, d, 'ato de publicação não se realiza em finais de semana.');
+        d = addDays(d, 1);
+        continue;
+      }
+
+      if(h && !rec && !isSpecialRunningDay(d)){
+        pushNote(pubLog, d, `ato de publicação não se realiza em feriados — ${h.name}.`);
+        d = addDays(d, 1);
+        continue;
+      }
+
+      pushNote(pubLog, d, `Publicação D${pubIndex} (${pubIndex===1 ? '1º' : '2º'} dia útil após expedição)`);
+      return d;
+    }
+  }
+
+  // ---------- Copiar para a área de transferência ----------
+  async function copiarTexto(texto){
+    try {
+      await navigator.clipboard.writeText(texto);
+      return true;
+    } catch(e){
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = texto;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        ta.remove();
+        return ok;
+      } catch(e2){ return false; }
+    }
+  }
+
+  // Troca o texto do botão por um aviso rápido ("Copiado ✓") e depois restaura
+  function feedbackBotao(btn, ok, textoOk){
+    if(btn.dataset.orig === undefined) btn.dataset.orig = btn.innerHTML;
+    btn.innerHTML = ok ? textoOk : 'Não foi possível copiar';
+    clearTimeout(btn._t);
+    btn._t = setTimeout(()=>{ btn.innerHTML = btn.dataset.orig; }, 1500);
+  }
+
+  // Monta o CSV detalhado (o mesmo conteúdo que antes era baixado)
+  function montarCSV(){
+    const linhas = [["#", "Data", "Dia da semana", "Classificação", "Observação"]];
+    document.querySelectorAll('#tabela tbody tr').forEach(tr=>{
+      const tds = tr.querySelectorAll('td');
+      linhas.push([tds[0].textContent, tds[1].textContent, tds[2].textContent, tds[3].textContent, tds[4].textContent]);
+    });
+    return linhas.map(cols=> cols.map(col=> `"${String(col).replaceAll('"','""')}"`).join(',')).join('\n');
+  }
+
+  // ---------- Função principal de cálculo ----------
+  function calcularPrazo() {
+    const tipo = document.getElementById('tipo').value;
+    const sData = document.getElementById('dataBase').value;
+    const nDias = parseInt(document.getElementById('dias').value, 10);
+    
+    if(!sData || isNaN(nDias) || nDias<=0){
+      alert('Informe a Data Inicial e um número válido de dias.');
+      return;
+    }
+
+    const marco = parseISO(sData);
+    let D1=null, D2=null, inicioContagem=null, firstNote=null;
+    const PUB_NOTES = new Map();
+
+    if(tipo === 'leitura'){
+      inicioContagem = nextBusinessDay(addDays(marco,1), 'start_end');
+      firstNote = '1º dia útil após leitura';
+    } else {
+      D1 = nextPublicationFrom(marco, 1, PUB_NOTES);
+      D2 = nextPublicationFrom(D1,    2, PUB_NOTES);
+      inicioContagem = nextBusinessDay(addDays(D2,1), 'start_end');
+      firstNote = 'dia útil subsequente à publicação D2';
+    }
+
+    const {end: dataFinal, counted} = addBusinessDays(addDays(inicioContagem,-1), nDias, firstNote);
+
+    // Datas de referência (marco, D1, D2) não se submetem ao veto de início/fim do dia
+    // especial (QF/Copa): o ato em si (leitura, expedição, publicação) já é permitido
+    // nessas datas pela lógica de cálculo; o veto vale apenas para a busca do início
+    // e do fim reais da contagem, nunca para esses marcos fixos.
+    const REF_DATES = new Set([ymd(marco)]);
+    if(D1) REF_DATES.add(ymd(D1));
+    if(D2) REF_DATES.add(ymd(D2));
+
+    // Montar tabela
+    const tbody = document.querySelector('#tabela tbody');
+    tbody.innerHTML = '';
+    let idx = 0;
+
+    let cursor = new Date(marco);
+    const endInclusive = new Date(dataFinal);
+
+    while(cursor <= endInclusive){
+      idx++;
+      const key = ymd(cursor);
+      const isMarco = (key === ymd(marco));
+      let mode = (cursor < inicioContagem && !REF_DATES.has(key)) ? 'start_end' : 'counting';
+
+      const base = classifyDay(cursor, mode);
+      const obsParts = [];
+
+      if(base.tag === 'Não útil'){
+        let reason = reasonNonUseful(cursor, mode);
+        if(isMarco){
+          const marcoTxt = (tipo==='leitura')?'Dia da leitura':'Dia da expedição';
+          const isRecesso = (reason.toLowerCase().includes('recesso'));
+          if(isRecesso){
+            reason = 'Recesso forense — ' + marcoTxt;
+            obsParts.push(reason);
+          } else {
+            obsParts.push(marcoTxt);
+          }
+        } else {
+          obsParts.push(reason);
+        }
+      }
+
+      if(PUB_NOTES && PUB_NOTES.has(key)){
+        obsParts.push(...PUB_NOTES.get(key));
+      }
+
+      if(counted.has(key)){
+        base.tag = 'Útil'; base.badge='ok';
+        obsParts.push(...counted.get(key));
+      }
+
+      const tr = document.createElement('tr');
+      const tdIdx = document.createElement('td'); tdIdx.textContent = idx;
+      const tdData = document.createElement('td'); tdData.textContent = fmtBR(base.date);
+      const tdDow  = document.createElement('td'); tdDow.textContent = base.dow;
+      const tdTag  = document.createElement('td'); tdTag.innerHTML = `<span class="tag ${base.badge}">${base.tag}</span>`;
+      const tdObs  = document.createElement('td'); tdObs.textContent = obsParts.join(' • ');
+      tr.append(tdIdx, tdData, tdDow, tdTag, tdObs);
+
+      if(key === ymd(dataFinal)) tr.style.outline = '2px solid var(--bad)';
+      tbody.appendChild(tr);
+
+      cursor = addDays(cursor,1);
+    }
+
+    const dataFinalTxt = fmtBR(dataFinal);
+    document.getElementById('finalDate').innerHTML =
+      `Prazo de <span class="code">${nDias}</span> dias úteis — <strong>data final:</strong> <span class="danger">${dataFinalTxt}</span>` +
+      `<button type="button" class="copy-mini" id="btnCopiarData" title="Copiar só a data">` +
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>`;
+    document.getElementById('btnCopiarData').onclick = async (e)=>{
+      const btn = e.currentTarget;
+      const ok = await copiarTexto(dataFinalTxt);
+      feedbackBotao(btn, ok, 'Copiado ✓');
+    };
+    document.getElementById('resultado').style.display = 'block';
+
+    // Aviso se o período calculado sai dos anos cadastrados na planilha
+    const avisoEl = document.getElementById('avisoCobertura');
+    const anoIni = marco.getFullYear(), anoFim = dataFinal.getFullYear();
+    if(COVER_MIN !== null && (anoIni < COVER_MIN || anoFim > COVER_MAX)){
+      avisoEl.textContent = `Atenção: a planilha só tem feriados de ${COVER_MIN} a ${COVER_MAX}. Cadastre os feriados do período calculado antes de confiar neste resultado.`;
+      avisoEl.style.display = 'block';
+    } else {
+      avisoEl.style.display = 'none';
+    }
+
+    // Copiar resumo
+    document.getElementById('btnCopiar').onclick = async (e)=>{
+      const btn = e.currentTarget;
+      const resumo = [
+        `Tipo: ${tipo === 'leitura' ? 'Leitura' : 'Expedição'}`,
+        `Data Inicial: ${fmtBR(marco)}`,
+        `Dias de prazo: ${nDias}`,
+        `Data final: ${fmtBR(dataFinal)}`
+      ].join('\n');
+      const ok = await copiarTexto(resumo);
+      feedbackBotao(btn, ok, 'Resumo copiado ✓');
+    };
+
+    // Copiar CSV detalhado (mesmo conteúdo do antigo download)
+    document.getElementById('btnCSV').onclick = async (e)=>{
+      const btn = e.currentTarget;
+      const ok = await copiarTexto(montarCSV());
+      feedbackBotao(btn, ok, 'CSV copiado ✓');
+    };
+  }
+
+  // ---------- Inicialização ----------
+  
+  // 1. Chips de atalho (botões de 5, 15, 30 dias)
+  document.querySelectorAll('.chip').forEach(ch => {
+    ch.addEventListener('click', ()=>{
+      document.getElementById('dias').value = ch.dataset.d;
+      // Opcional: focar no botão calcular após escolher o chip
+      document.getElementById('btnCalcular').focus(); 
+    });
+  });
+
+  // 2. Botão calcular (Clique do Mouse)
+  document.getElementById('btnCalcular').addEventListener('click', calcularPrazo);
+
+  // 3. Navegação via Teclado (Tecla Enter em qualquer campo dispara o cálculo)
+  const inputsNavegaveis = ['dataBase', 'dias', 'tipo'];
+  inputsNavegaveis.forEach(id => {
+    document.getElementById(id).addEventListener('keypress', function(e){
+      if(e.key === 'Enter'){
+        e.preventDefault(); 
+        document.getElementById('btnCalcular').click();
+      }
+    });
+  });
+
+  // 4. Correção para COLAR data (Paste)
+  // O campo date padrão exige yyyy-mm-dd. Se o usuário colar dd/mm/yyyy, convertemos.
+  const inputData = document.getElementById('dataBase');
+  inputData.addEventListener('paste', function(e) {
+    // Tenta pegar o texto colado
+    const paste = (e.clipboardData || window.clipboardData).getData('text');
+    
+    // Expressão regular para identificar formato BR (dd/mm/aaaa ou dd-mm-aaaa)
+    // Aceita separadores / ou -
+    const regexBR = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
+    
+    if (regexBR.test(paste)) {
+      e.preventDefault(); // Impede o comportamento padrão (que falharia)
+      
+      // Converte para o formato ISO (yyyy-mm-dd)
+      const partes = paste.split(/[\/\-]/); // Quebra em dia, mes, ano
+      const dia = partes[0].padStart(2, '0');
+      const mes = partes[1].padStart(2, '0');
+      const ano = partes[2];
+      
+      this.value = `${ano}-${mes}-${dia}`;
+    }
+  });
+
+  // 5. Toggle informações legais
+  document.getElementById('legalToggle').addEventListener('click', function(){
+    this.classList.toggle('open');
+    document.getElementById('legalContent').classList.toggle('show');
+  });
+
+  // 6. Data padrão: hoje
+  const today = new Date();
+  const todayFormatted = today.toISOString().split('T')[0];
+  document.getElementById('dataBase').value = todayFormatted;
+
+  // 7. Carregar feriados da planilha
+  loadHolidays();
+</script>
+  
+</body>
+</html>
