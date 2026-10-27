@@ -245,11 +245,9 @@
                 </div>
                 <div class="filter-group">
                     <label for="dataSource">Base de Dados</label>
-                                       <select id="dataSource">
-                        <option value="">Todas as Bases</option>
-                        <option value="JURISPRUDENCIA">Jurisprudência (6ª Câmara Cível)</option>
-                        <option value="JURISPRUDENCIA_COMPLETA_TJGO">Jurisprudência Completa - TJGO</option>
-                        <option value="SECOES_CIVEIS">Seções Cíveis</option>
+                    <select id="dataSource">
+                        <option value="JURISPRUDENCIA_COMPLETA_TJGO">Jurisprudência Cível - TJGO</option>
+                        <option value="SUMULAS_E_TEMAS">Súmulas e Temas (todas)</option>
                         <option value="SUMULAS_TJGO">Súmulas do TJGO</option>
                         <option value="SUMULAS_STJ">Súmulas do STJ</option>
                         <option value="SUMULAS_STF">Súmulas do STF</option>
@@ -258,10 +256,18 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label for="relator">Relator</label>
-                    <select id="relator">
-                        <option value="">Todos os Relatores</option>
+                    <label for="orgao">Órgão Julgador</label>
+                    <select id="orgao">
+                        <option value="">Todos (Câmaras e Seções)</option>
+                        <option value="CAMARAS">Câmaras Cíveis (todas)</option>
+                        <option value="SECOES">Seções Cíveis</option>
+                        <option value="SEXTA">6ª Câmara Cível</option>
+                        <option value="DEMAIS">Demais Câmaras Cíveis</option>
                     </select>
+                </div>
+                <div class="filter-group">
+                    <label for="relator">Relator</label>
+                    <input type="text" id="relator" placeholder="Nome ou parte do nome">
                 </div>
             </div>
 
@@ -300,18 +306,13 @@ const TJGO_COMPLETA_API = 'https://jurisprudencia-api.renatowill.workers.dev';
 
 
 const FONTES_DISPONIVEIS = {
-    'JURISPRUDENCIA': { nome: 'Jurisprudência (6ª Câmara Cível)', tipo: 'ACORDAO', temRelator: true  },
-    'SECOES_CIVEIS':  { nome: 'Seções Cíveis',                    tipo: 'ACORDAO', temRelator: true  },
-    'SUMULAS_TJGO':   { nome: 'Súmulas do TJGO',                  tipo: 'SUMULA',  temRelator: false },
-    'SUMULAS_STJ':    { nome: 'Súmulas do STJ',                   tipo: 'SUMULA',  temRelator: false },
-    'SUMULAS_STF':    { nome: 'Súmulas do STF',                   tipo: 'SUMULA',  temRelator: false },
-    'TEMAS_STJ':      { nome: 'Temas Repetitivos do STJ',         tipo: 'TEMA',    temRelator: false },
-    'TEMAS_TJGO':     { nome: 'Temas / IRDR do TJGO',             tipo: 'TEMA',    temRelator: false },
-    'JURISPRUDENCIA_COMPLETA_TJGO': {
-    nome: 'Jurisprudência Completa - TJGO',
-    tipo: 'ACORDAO',
-    temRelator: false
-}
+    'JURISPRUDENCIA_COMPLETA_TJGO': { nome: 'Jurisprudência Cível - TJGO (Câmaras e Seções)', tipo: 'ACORDAO', temRelator: true },
+    'SUMULAS_E_TEMAS': { nome: 'Súmulas e Temas (todas as bases)', tipo: 'SUMULA', temRelator: false },
+    'SUMULAS_TJGO':   { nome: 'Súmulas do TJGO',           tipo: 'SUMULA',  temRelator: false },
+    'SUMULAS_STJ':    { nome: 'Súmulas do STJ',            tipo: 'SUMULA',  temRelator: false },
+    'SUMULAS_STF':    { nome: 'Súmulas do STF',            tipo: 'SUMULA',  temRelator: false },
+    'TEMAS_STJ':      { nome: 'Temas Repetitivos do STJ',  tipo: 'TEMA',    temRelator: false },
+    'TEMAS_TJGO':     { nome: 'Temas / IRDR do TJGO',      tipo: 'TEMA',    temRelator: false }
 };
 
 // ── Variáveis globais ──────────────────────────────────────────────────────────
@@ -325,8 +326,8 @@ document.addEventListener('DOMContentLoaded', function () {
     updateClock();
     setInterval(updateClock, 1000);
 
-    carregarRelatores();
     atualizarDisponibilidadeRelator();
+    updateInterfaceForDataSource(document.getElementById('dataSource').value);
 
     document.getElementById('terms').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') performSearch();
@@ -410,13 +411,17 @@ function updateInterfaceForDataSource(source) {
 }
 
 function atualizarDisponibilidadeRelator() {
-    const dataSource    = document.getElementById('dataSource').value;
-    const relatorSelect = document.getElementById('relator');
-    const fonte         = FONTES_DISPONIVEIS[dataSource];
-    const habilitar     = dataSource === '' || (fonte && fonte.temRelator);
+    const fonte       = FONTES_DISPONIVEIS[document.getElementById('dataSource').value];
+    const relatorCampo = document.getElementById('relator');
+    const orgaoCampo   = document.getElementById('orgao');
+    const habilitar    = !!(fonte && fonte.temRelator);
 
-    relatorSelect.disabled = !habilitar;
-    if (!habilitar) relatorSelect.value = '';
+    relatorCampo.disabled = !habilitar;
+    orgaoCampo.disabled   = !habilitar;
+    if (!habilitar) {
+        relatorCampo.value = '';
+        orgaoCampo.value   = '';
+    }
 }
 
 function formatarDataBR(valor) {
@@ -442,24 +447,6 @@ function chamarApi(acao, parametros) {
     });
 }
 
-function carregarRelatores() {
-    chamarApi('listarRelatoresPublico', { fontes: ['JURISPRUDENCIA', 'SECOES_CIVEIS'] })
-        .then(function (resposta) {
-            if (!resposta.sucesso) {
-                console.error('Falha ao carregar relatores:', resposta.erro);
-                return;
-            }
-            const sel = document.getElementById('relator');
-            resposta.dados.relatores.forEach(function (nome) {
-                const opt = document.createElement('option');
-                opt.value = opt.textContent = nome;
-                sel.appendChild(opt);
-            });
-        })
-        .catch(function (erro) {
-            console.error('Erro ao carregar relatores:', erro);
-        });
-}
 // Coloca entre aspas as palavras com pontuação (art., 1.178, 481/STJ), que o Turso rejeitaria.
 function protegerPontuacaoFTS5(trecho) {
     return trecho.split(/(\s+|[()])/).map(function (t) {
@@ -521,8 +508,7 @@ function normalizarNumeroProcessoCNJ(valor) {
     return '';
 }
 
-function pesquisarJurisprudenciaCompletaTJGO(searchTerms, startDate, endDate, relator) {
-    const params = new URLSearchParams();
+function pesquisarJurisprudenciaCompletaTJGO(searchTerms, startDate, endDate, relator, orgao) {    const params = new URLSearchParams();
 
     const processoCNJ = normalizarNumeroProcessoCNJ(searchTerms);
     const consultaFTS = processoCNJ
@@ -538,6 +524,20 @@ function pesquisarJurisprudenciaCompletaTJGO(searchTerms, startDate, endDate, re
     if (startDate) params.set('data_de', startDate);
     if (endDate) params.set('data_ate', endDate);
     if (relator) params.append('relator', relator);
+
+    // Somente jurisprudência cível, filtrada por Câmara ou Seção.
+    params.set('area', 'Cível');
+    if (orgao === 'CAMARAS') {
+        params.set('tipo_orgao', 'Câmara');
+    } else if (orgao === 'SECOES') {
+        params.set('tipo_orgao', 'Seção');
+    } else if (orgao === 'SEXTA') {
+        params.set('tipo_orgao', 'Câmara');
+        params.set('camara', '6ª Câmara Cível');
+    } else if (orgao === 'DEMAIS') {
+        params.set('tipo_orgao', 'Câmara');
+        params.set('excluir_serventia', '6ª Câmara Cível');
+    }
 
     params.set('limite', '50');
     params.set('pagina', '1');
@@ -618,6 +618,9 @@ function performSearch() {
 
     const dataSource =
         document.getElementById('dataSource').value;
+
+    const orgao =
+        document.getElementById('orgao').value;
     const processoCNJ =
     normalizarNumeroProcessoCNJ(searchTerms);
 
@@ -646,14 +649,13 @@ function performSearch() {
     // NOVA BASE COMPLETA DO TJGO
     // ============================================================
 
-if (
-    dataSource === 'JURISPRUDENCIA_COMPLETA_TJGO' ||
-    (dataSource === '' && processoCNJ)
-) {
+if (dataSource === 'JURISPRUDENCIA_COMPLETA_TJGO') {
         pesquisarJurisprudenciaCompletaTJGO(
             searchTerms,
             startDate,
-            endDate
+            endDate,
+            relator,
+            orgao
         )
         .then(function (resposta) {
 
@@ -696,7 +698,12 @@ if (
             searchTerms;
     }
 
-    if (dataSource) {
+    if (dataSource === 'SUMULAS_E_TEMAS') {
+        parametros.fontes = [
+            'SUMULAS_TJGO', 'SUMULAS_STJ', 'SUMULAS_STF',
+            'TEMAS_STJ', 'TEMAS_TJGO'
+        ];
+    } else if (dataSource) {
         parametros.fontes =
             [dataSource];
     }
