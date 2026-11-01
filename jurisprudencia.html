@@ -261,7 +261,6 @@
                         <option value="">Todos (Câmaras e Seções)</option>
                         <option value="CAMARAS">Câmaras Cíveis (todas)</option>
                         <option value="SECOES">Seções Cíveis</option>
-                        <option value="SEXTA">6ª Câmara Cível</option>
                         <option value="DEMAIS">Demais Câmaras Cíveis</option>
                     </select>
                 </div>
@@ -327,6 +326,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(updateClock, 1000);
 
     atualizarDisponibilidadeRelator();
+    atualizarOrgaosJulgadores();
     updateInterfaceForDataSource(document.getElementById('dataSource').value);
 
     document.getElementById('terms').addEventListener('keypress', function (e) {
@@ -335,6 +335,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('dataSource').addEventListener('change', function () {
         atualizarDisponibilidadeRelator();
+        atualizarOrgaosJulgadores();
         updateInterfaceForDataSource(this.value);
     });
 
@@ -422,6 +423,75 @@ function atualizarDisponibilidadeRelator() {
         relatorCampo.value = '';
         orgaoCampo.value   = '';
     }
+}
+
+// ── Órgãos julgadores ──────────────────────────────────────────────────────────
+// Lista os órgãos julgadores existentes na base selecionada.
+// A lista fica guardada no navegador por 24 horas para não consultar a cada visita.
+function obterListaOrgaos() {
+    const chave = 'orgaos_julgadores_civel_v1';
+
+    try {
+        const guardado = JSON.parse(localStorage.getItem(chave) || 'null');
+        if (guardado && Date.now() - guardado.quando < 24 * 60 * 60 * 1000) {
+            return Promise.resolve(guardado.orgaos);
+        }
+    } catch (e) {}
+
+    return fetch(TJGO_COMPLETA_API + '/orgaos?area=' + encodeURIComponent('Cível'))
+        .then(function (resposta) { return resposta.json(); })
+        .then(function (dados) {
+            const orgaos = dados.orgaos || [];
+            if (orgaos.length > 0) {
+                try {
+                    localStorage.setItem(chave, JSON.stringify({ quando: Date.now(), orgaos: orgaos }));
+                } catch (e) {}
+            }
+            return orgaos;
+        });
+}
+
+function montarOpcoesOrgaos(orgaos) {
+    const select = document.getElementById('orgao');
+    select.querySelectorAll('optgroup').forEach(function (g) { g.remove(); });
+
+    const grupos = {};
+    orgaos.forEach(function (o) {
+        if (!o.serventia) return;
+        const tipo = o.tipo_orgao || 'Outros';
+        if (!grupos[tipo]) grupos[tipo] = [];
+        grupos[tipo].push(o.serventia);
+    });
+
+    Object.keys(grupos).sort().forEach(function (tipo) {
+        const grupo = document.createElement('optgroup');
+        grupo.label = tipo === 'Câmara' ? 'Câmaras' : (tipo === 'Seção' ? 'Seções' : tipo);
+
+        grupos[tipo]
+            .sort(function (a, b) { return a.localeCompare(b, 'pt-BR', { numeric: true }); })
+            .forEach(function (nome) {
+                const opcao = document.createElement('option');
+                opcao.value = 'ORGAO:' + nome;
+                opcao.textContent = nome;
+                grupo.appendChild(opcao);
+            });
+
+        select.appendChild(grupo);
+    });
+}
+
+function atualizarOrgaosJulgadores() {
+    const select = document.getElementById('orgao');
+    const fonte = FONTES_DISPONIVEIS[document.getElementById('dataSource').value];
+
+    if (!fonte || !fonte.temRelator) {
+        select.querySelectorAll('optgroup').forEach(function (g) { g.remove(); });
+        return;
+    }
+
+    obterListaOrgaos()
+        .then(montarOpcoesOrgaos)
+        .catch(function (erro) { console.error('Falha ao carregar órgãos julgadores:', erro); });
 }
 
 function formatarDataBR(valor) {
@@ -521,22 +591,23 @@ function pesquisarJurisprudenciaCompletaTJGO(searchTerms, startDate, endDate, re
         params.set('q', consultaFTS);
     }
 
-    if (startDate) params.set('data_de', startDate);
-    if (endDate) params.set('data_ate', endDate);
-    if (relator) params.append('relator', relator);
+    if (!processoCNJ) {
+        if (startDate) params.set('data_de', startDate);
+        if (endDate) params.set('data_ate', endDate);
+        if (relator) params.append('relator', relator);
 
-    // Somente jurisprudência cível, filtrada por Câmara ou Seção.
-    params.set('area', 'Cível');
-    if (orgao === 'CAMARAS') {
-        params.set('tipo_orgao', 'Câmara');
-    } else if (orgao === 'SECOES') {
-        params.set('tipo_orgao', 'Seção');
-    } else if (orgao === 'SEXTA') {
-        params.set('tipo_orgao', 'Câmara');
-        params.set('camara', '6ª Câmara Cível');
-    } else if (orgao === 'DEMAIS') {
-        params.set('tipo_orgao', 'Câmara');
-        params.set('excluir_serventia', '6ª Câmara Cível');
+        // Somente jurisprudência cível, filtrada por Câmara ou Seção.
+        params.set('area', 'Cível');
+        if (orgao === 'CAMARAS') {
+            params.set('tipo_orgao', 'Câmara');
+        } else if (orgao === 'SECOES') {
+            params.set('tipo_orgao', 'Seção');
+        } else if (orgao.indexOf('ORGAO:') === 0) {
+            params.set('serventia', orgao.slice(6));
+        } else if (orgao === 'DEMAIS') {
+            params.set('tipo_orgao', 'Câmara');
+            params.set('excluir_serventia', '6ª Câmara Cível');
+        }
     }
 
     params.set('limite', '50');
